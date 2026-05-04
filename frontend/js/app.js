@@ -37,17 +37,29 @@ const fmt = {
   }
 };
 
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) {
-    let msg = `HTTP ${res.status}`;
-    try {
-      const j = await res.json();
-      if (j && j.error) msg = j.error;
-    } catch (_) { /* ignorar parse */ }
-    throw new Error(msg);
+async function fetchJSON(url, options = {}) {
+  const timeoutMs = options.timeoutMs ?? 120000;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: ctrl.signal });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const j = await res.json();
+        if (j && j.error) msg = j.error;
+      } catch (_) { /* ignorar parse */ }
+      throw new Error(msg);
+    }
+    return await res.json();
+  } catch (e) {
+    if (e && e.name === 'AbortError') {
+      throw new Error(`Tempo esgotado (${Math.round(timeoutMs / 1000)}s) · ${url}`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
 function escAttr(s) {

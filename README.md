@@ -64,8 +64,8 @@ Mesma coisa: dashboard em **http://localhost:3001/** — **não** use `localhost
 
 **Erros comuns no deploy**
 
-- `path-to-regexp` / rewrite inválido: use sempre o `vercel.json` deste repo (rotas `/api/:path*`, não `/(.*)`).
-- Plano gratuito (Hobby): evite `maxDuration` altos no JSON; timeout no cold start com `data.json` grande aparece só na primeira requisição.
+- O `api/index.js` exporta o Express diretamente; não use `serverless-http` (pode “pendurar” o pedido na Vercel).
+- Cold start pode ser grande por causa do `backend/data/data.json`; no plano gratuito o tempo máximo da função é curto — se aparecer **504**, considere otimizar a base ou plano superior.
 
 - Se aparecer **404** nas chamadas `/api/...`, confira o `vercel.json` (rewrites → `/api` e ficheiro `api/index.js`) e faça redeploy.
 - O `data.json` é carregado no cold start da função; base muito grande pode deixar a primeira abertura mais lenta.
