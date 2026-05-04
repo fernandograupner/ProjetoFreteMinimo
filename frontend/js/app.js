@@ -3,12 +3,11 @@ const API = (typeof window !== 'undefined' && window.location.origin && window.l
   ? `${window.location.origin}/api`
   : 'http://localhost:3001/api';
 
-const GRADE_LIMIT = 150;
-
 let charts = {};
 let filtersData = {};
 /** Drill dos donuts · query sitEmb/sitPag */
 let chartOverlay = { sitEmb: null, sitPag: null };
+/** Página atual da planilha (servidor pagina por desempenho). */
 let gradePage = 1;
 /** Ordenação servidor da planilha: '' = ordem da base filtrada */
 let gradeSort = { key: '', dir: 'asc' };
@@ -16,6 +15,11 @@ let destinoFilialRows = [];
 let destinoSort = { key: 'qtd', dir: 'desc' };
 
 const FILTER_KEYS = ['ano', 'mes', 'filial', 'contrato', 'tipoCte', 'cliente'];
+
+const GRADE_LIMIT = 200;
+
+const CHART_AXIS = '#e7edf8';
+const CHART_AXIS_SOFT = '#b8c4d9';
 
 if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
   Chart.register(ChartDataLabels);
@@ -103,6 +107,7 @@ function setFilterValues(key, values) {
     cb.checked = want.has(cb.value);
   });
   updateFilterSummary(key);
+  gradePage = 1;
   document.querySelectorAll('.filter-dropdown.open').forEach(w => w.classList.remove('open'));
 }
 
@@ -191,6 +196,7 @@ function drillAfterChange() {
 function clearDonutDrill() {
   chartOverlay.sitEmb = null;
   chartOverlay.sitPag = null;
+  gradePage = 1;
   refreshDonutDrillChip();
   scheduleReload();
 }
@@ -317,11 +323,14 @@ async function init() {
     refreshDonutDrillChip();
     document.getElementById('btn-clear-chart-filter')?.addEventListener('click', clearDonutDrill);
     document.getElementById('grade-prev')?.addEventListener('click', () => {
-      if (gradePage > 1) { gradePage--; loadGrade(); }
+      if (gradePage > 1) {
+        gradePage--;
+        loadGrade();
+      }
     });
-    document.getElementById('grade-next')?.addEventListener('click', async () => {
+    document.getElementById('grade-next')?.addEventListener('click', () => {
       gradePage++;
-      await loadGrade();
+      loadGrade();
     });
   } catch (e) {
     console.error(e);
@@ -530,7 +539,7 @@ async function loadGrade(pageOverride) {
     const from = resp.total === 0 ? 0 : (resp.page - 1) * resp.limit + 1;
     const to = Math.min(resp.page * resp.limit, resp.total);
     if (meta) {
-      meta.textContent = `${fmt.num(resp.total)} viagens · ${from}–${to} · pág. ${resp.page}/${resp.paginasTotal}`;
+      meta.textContent = `${fmt.num(resp.total)} viagens · ${fmt.num(from)}–${fmt.num(to)} · pág. ${resp.page}/${resp.paginasTotal}`;
     }
     document.getElementById('grade-page-lbl').textContent = `Página ${resp.page} de ${resp.paginasTotal}`;
     document.getElementById('grade-prev').disabled = resp.page <= 1;
@@ -663,7 +672,7 @@ function renderTendenciaLinha(canvasId, series, keys, labels, colors, chartKey) 
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: '#8892a4', font: { size: 11 }, boxWidth: 12 } },
+        legend: { labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 } },
         datalabels: {
           align: 'top',
           offset: 2,
@@ -686,12 +695,12 @@ function renderTendenciaLinha(canvasId, series, keys, labels, colors, chartKey) 
       scales: {
         x: {
           grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#8892a4', font: { size: 10 } },
-          title: { display: true, text: 'Clique num ponto para filtrar período', color: '#576077', font: { size: 10 } }
+          ticks: { color: CHART_AXIS, font: { size: 10 } },
+          title: { display: true, text: 'Clique num ponto para filtrar período', color: CHART_AXIS_SOFT, font: { size: 10 } }
         },
         y: {
           grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#8892a4', font: { size: 10 }, callback: v => `${v}%` },
+          ticks: { color: CHART_AXIS, font: { size: 10 }, callback: v => `${v}%` },
           suggestedMin: 0,
           suggestedMax: 100
         }
@@ -705,7 +714,6 @@ function renderTendenciaLinha(canvasId, series, keys, labels, colors, chartKey) 
         setFilterValues('mes', [row.mes]);
         chartOverlay.sitEmb = null;
         chartOverlay.sitPag = null;
-        gradePage = 1;
         refreshDonutDrillChip();
         scheduleReload();
       }
@@ -738,14 +746,14 @@ function renderTripDonut(canvasId, abaixo, dentro, chartKey, overlayKey) {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: '#8892a4', font: { size: 11 }, boxWidth: 12 }
+          labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 }
         },
         subtitle: {
           display: true,
           text: overlayKey === 'sitEmb'
             ? 'Clique para filtrar faixa vs frete peso'
             : 'Clique para filtrar faixa BIPE × piso (só contratos Agregado/Terceiro)',
-          color: '#576077',
+          color: CHART_AXIS_SOFT,
           font: { size: 9 }
         },
         datalabels: {
@@ -798,7 +806,7 @@ function renderFarolMixChart(farolData) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: '#8892a4', font: { size: 11 }, boxWidth: 12 } },
+        legend: { labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 } },
         tooltip: {
           callbacks: {
             footer: items => {
@@ -812,7 +820,7 @@ function renderFarolMixChart(farolData) {
         subtitle: {
           display: true,
           text: 'Clique na barra (contrato) para filtrar',
-          color: '#576077',
+          color: CHART_AXIS_SOFT,
           font: { size: 10 },
           padding: { bottom: 4 }
         },
@@ -828,8 +836,8 @@ function renderFarolMixChart(farolData) {
         }
       },
       scales: {
-        x: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8892a4' } },
-        y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8892a4' } }
+        x: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: CHART_AXIS } },
+        y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: CHART_AXIS } }
       },
       onClick(ev, elems) {
         if (!elems.length) return;
@@ -839,7 +847,6 @@ function renderFarolMixChart(farolData) {
         setFilterValues('contrato', [contrato]);
         chartOverlay.sitEmb = null;
         chartOverlay.sitPag = null;
-        gradePage = 1;
         refreshDonutDrillChip();
         scheduleReload();
       }
@@ -884,7 +891,7 @@ function renderViagensTable(tbody, rows) {
 
   tbody.innerHTML = rows.map(r => `
     <tr>
-      <td><strong>${escHtml(r.cliente)}</strong><br><span class="mono" style="font-size:10px;color:var(--text-muted)">${escHtml(r.cnpjTruncado)}</span></td>
+      <td><strong>${escHtml(r.cliente)}</strong><br><span class="mono" style="font-size:10px;color:var(--text-secondary)">${escHtml(r.cnpjTruncado)}</span></td>
       <td class="mono">${fmt.num(r.qtd)}</td>
       <td class="mono" style="color:var(--red)">${fmt.num(r.abaixo)}</td>
       <td class="mono" style="color:var(--green)">${fmt.num(r.dentro)}</td>
@@ -925,7 +932,7 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: '#8892a4', font: { size: 11 }, boxWidth: 12 } },
+        legend: { labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 } },
         tooltip: {
           callbacks: {
             label: c => ` ${c.dataset.label}: ${Number(c.raw).toFixed(1)}% (${fmt.num(sliceData[c.dataIndex].qtd)} viagens)`
@@ -934,7 +941,7 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
         subtitle: {
           display: true,
           text: 'Clique numa faixa/barra horizontal para filtrar cliente',
-          color: '#576077',
+          color: CHART_AXIS_SOFT,
           font: { size: 10 }
         },
         datalabels: {
@@ -953,12 +960,12 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
           stacked: true,
           max: 100,
           grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#8892a4', callback: v => `${v}%` }
+          ticks: { color: CHART_AXIS, callback: v => `${v}%` }
         },
         y: {
           stacked: true,
           grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#8892a4', font: { size: 10 }, autoSkip: false }
+          ticks: { color: CHART_AXIS, font: { size: 10 }, autoSkip: false }
         }
       },
       onClick(ev, elems) {
@@ -969,7 +976,6 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
         if (key) setFilterValues('cliente', [key]);
         chartOverlay.sitEmb = null;
         chartOverlay.sitPag = null;
-        gradePage = 1;
         refreshDonutDrillChip();
         scheduleReload();
       }
@@ -1031,7 +1037,7 @@ function renderFiliaisChart(data) {
         subtitle: {
           display: true,
           text: 'Clique para filtrar filial',
-          color: '#576077',
+          color: CHART_AXIS_SOFT,
           font: { size: 10 }
         },
         datalabels: {
@@ -1053,9 +1059,9 @@ function renderFiliaisChart(data) {
         x: {
           suggestedMax: 100,
           grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: '#8892a4', callback: v => `${v}%` }
+          ticks: { color: CHART_AXIS, callback: v => `${v}%` }
         },
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8892a4', font: { size: 10 }, autoSkip: false } }
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: CHART_AXIS, font: { size: 10 }, autoSkip: false } }
       },
       onClick(ev, elems) {
         if (!elems.length) return;
@@ -1064,7 +1070,6 @@ function renderFiliaisChart(data) {
         setFilterValues('filial', [lab.sigla]);
         chartOverlay.sitEmb = null;
         chartOverlay.sitPag = null;
-        gradePage = 1;
         refreshDonutDrillChip();
         scheduleReload();
       }
@@ -1086,7 +1091,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (tab === 'pagamento') await loadPagamento(q);
     if (tab === 'filiais') await loadFiliais(q);
     if (tab === 'destinos') await loadDestinoFilial(q);
-    if (tab === 'planilha') await loadGrade(1);
+    if (tab === 'planilha') await loadGrade();
   });
 });
 

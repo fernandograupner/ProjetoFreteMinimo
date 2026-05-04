@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "api/server.js": {
+      "memory": 3008,
+      "maxDuration": 60,
+      "includeFiles": "backend/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/server" }
+  ]
+}

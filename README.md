@@ -8,8 +8,13 @@ Painel executivo para análise de compliance do piso mínimo de frete (ANTT) por
 
 ```
 frete-dashboard/
+├── api/
+│   └── server.js          # servidor serverless na Vercel (rewrite → aqui)
+├── package.json           # deps na raiz (deploy Vercel)
+├── vercel.json
 ├── backend/
-│   ├── server.js          # Servidor Express (porta 3001)
+│   ├── app.js             # aplicação Express (exportável)
+│   ├── server.js          # servidor local (porta 3001)
 │   ├── package.json
 │   ├── routes/
 │   │   ├── frete.js       # /api/frete/* — todas as análises
@@ -27,21 +32,38 @@ frete-dashboard/
 
 ---
 
-## 🚀 Como Rodar
+## 🚀 Como Rodar (local)
 
-### 1. Instalar dependências
+### Opção A — só backend (como antes)
 ```bash
 cd backend
 npm install
-```
-
-### 2. Iniciar o servidor
-```bash
 node server.js
 ```
-
-### 3. Abrir o dashboard
 Acesse: **http://localhost:3001**
+
+### Opção B — pela raiz (igual ao build da Vercel)
+```bash
+npm install
+npm start
+```
+
+---
+
+## ▲ Deploy na Vercel
+
+1. Crie conta em [vercel.com](https://vercel.com) e conecte ao GitHub.
+2. **Import** o repositório [ProjetoFreteMinimo](https://github.com/fernandograupner/ProjetoFreteMinimo).
+3. **Root Directory**: deixe **vazio** (a raiz do repositório tem de ser onde estão `vercel.json`, `api/` e `backend/`).
+4. **Framework Preset**: Other · **Build Command**: vazio ou `npm run vercel-build` · **Output Directory**: vazio  
+5. **Install Command**: `npm install` (na raiz; o `package.json` na raiz instala Express, cors e serverless-http).
+6. Deploy. A URL gerada (`https://xxx.vercel.app`) servirá o HTML e `/api/*` pelo mesmo domínio (o frontend já usa `/api` em relação à origem).
+
+**Observações**
+
+- Se aparecer **404**, confira na Vercel (**Settings → General**) se **Root Directory** está vazio e faça novo deploy depois do `git pull` dos ficheiros `vercel.json` e `api/server.js`.
+- O `data.json` é carregado no cold start da função; base muito grande pode deixar a primeira abertura mais lenta.
+- Plano gratuito há limites de execução e tamanho; monitore no painel da Vercel se algo falhar no build.
 
 ---
 

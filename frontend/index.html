@@ -25,18 +25,10 @@
       <div class="header-subtitle">Análise logística por viagem (CT-e)</div>
     </div>
   </div>
-  <div class="header-meta">
-    <div class="live-badge">
-      <div class="live-dot"></div>
-      Live Data
-    </div>
-  </div>
 </header>
 
 <!-- ── FILTERS ── -->
-<p class="filter-hint" id="filter-hint-bar">
-  <strong>Filtros:</strong> caixas suspensas com várias opções; <strong>nada marcado</strong> = <strong>todos</strong>.
-  Nos gráficos: use os cliques para cruzar dados.
+<p class="filter-drill-chip" id="filter-hint-bar">
   <button type="button" class="btn-link-filter" id="btn-clear-chart-filter" hidden>Remover filtro do donut</button>
 </p>
 <div class="filters-bar">
@@ -172,13 +164,13 @@
       </div>
     </div>
 
-    <p class="section-title">por tipo de contrato · frota usa frete peso · ag/ter usa BIPE</p>
+    <p class="section-title">Farol por tipo de contrato</p>
     <div class="farol-grid">
       <div class="farol-card" id="farol-frota">
         <div class="farol-header">
           <div>
             <div class="farol-title">Frota</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px" class="farol-total">—</div>
+            <div style="font-size:11px;margin-top:2px" class="farol-total">—</div>
           </div>
           <div class="farol-icon frota">🚛</div>
         </div>
@@ -211,7 +203,7 @@
         <div class="farol-header">
           <div>
             <div class="farol-title">Agregado</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px" class="farol-total">—</div>
+            <div style="font-size:11px;margin-top:2px" class="farol-total">—</div>
           </div>
           <div class="farol-icon agregado">🤝</div>
         </div>
@@ -244,7 +236,7 @@
         <div class="farol-header">
           <div>
             <div class="farol-title">Terceiro</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px" class="farol-total">—</div>
+            <div style="font-size:11px;margin-top:2px" class="farol-total">—</div>
           </div>
           <div class="farol-icon terceiro">📦</div>
         </div>
@@ -406,7 +398,6 @@
 
   <!-- ═══ PAGAMENTO ═══ -->
   <div id="panel-pagamento" class="tab-panel">
-    <p class="section-title">o que você paga ao prestador — Agregado e Terceiro · gráficos na aba <strong>Visão geral</strong></p>
     <div class="table-card">
       <div class="table-header">
         <div class="table-title">Por cliente · pagamento BIPE</div>
@@ -494,16 +485,16 @@
 
   <!-- ═══ PLANILHA ═══ -->
   <div id="panel-planilha" class="tab-panel">
-    <p class="section-title">visão planilha · clique nos títulos para ordenar · clique na linha = detalhe JSON · Frota: Farol BIPE = frete peso</p>
+    <p class="section-title">Planilha · ordene pelo cabeçalho · listagem paginada (rápida)</p>
     <div class="table-card">
       <div class="table-header">
         <div class="table-title">CT-e filtrados</div>
         <div class="table-count" id="grade-meta">—</div>
       </div>
       <div class="grade-toolbar">
-        <button type="button" class="btn-page" id="grade-prev" disabled>← Anterior</button>
+        <button type="button" class="btn-page" id="grade-prev" disabled aria-label="Página anterior">← Anterior</button>
         <span class="grade-page-lbl" id="grade-page-lbl">Página 1</span>
-        <button type="button" class="btn-page" id="grade-next">Próxima →</button>
+        <button type="button" class="btn-page" id="grade-next" aria-label="Próxima página">Próxima →</button>
       </div>
       <div class="table-wrap table-wrap-grade">
         <table class="table-grade">

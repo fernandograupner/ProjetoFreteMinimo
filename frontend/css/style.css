@@ -142,7 +142,7 @@ body {
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.92);
   font-family: var(--font-mono);
 }
 
@@ -179,7 +179,12 @@ body {
 
 .filter-hint strong { color: var(--text-primary); }
 
-.btn-link-filter {
+.filter-drill-chip {
+  padding: 8px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  min-height: 8px;
+}
   margin-left: 12px;
   background: none;
   border: none;
@@ -241,7 +246,7 @@ body {
 
 .filter-dd-caret {
   flex-shrink: 0;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.78);
   font-size: 10px;
 }
 
@@ -282,14 +287,14 @@ body {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg-secondary);
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.9);
   cursor: pointer;
   font-family: var(--font-main);
 }
 
 .filter-dd-mini:hover {
   border-color: var(--cyan);
-  color: var(--text-primary);
+  color: #fff;
 }
 
 .filter-dd-options {
@@ -583,7 +588,7 @@ tbody.tbody-click-bipe tr[data-bipe]:hover {
 .grade-legend-sparse {
   padding: 10px 18px;
   font-size: 11px;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.85);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -673,7 +678,7 @@ tbody.tbody-click-bipe tr[data-bipe]:hover {
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.88);
   margin-bottom: 16px;
   margin-top: 28px;
 }
@@ -837,8 +842,14 @@ tbody.tbody-click-bipe tr[data-bipe]:hover {
 
 .farol-desc {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.82);
   margin-bottom: 14px;
+}
+
+.farol-total {
+  color: rgba(255,255,255,0.78);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
 }
 
 .progress-bar-wrap {
@@ -887,7 +898,7 @@ tbody.tbody-click-bipe tr[data-bipe]:hover {
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.8);
 }
 
 /* ── CHARTS ── */
@@ -915,7 +926,7 @@ tbody.tbody-click-bipe tr[data-bipe]:hover {
 
 .chart-subtitle {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.82);
   margin-bottom: 16px;
 }
 
@@ -951,7 +962,7 @@ tbody.tbody-click-bipe tr[data-bipe]:hover {
 
 .table-count {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.85);
   font-family: var(--font-mono);
 }
 
@@ -974,7 +985,7 @@ thead {
 
 th {
   background: var(--bg-secondary);
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.92);
   font-size: 10px;
   font-family: var(--font-mono);
   text-transform: uppercase;

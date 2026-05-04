@@ -591,7 +591,7 @@ router.get('/por-destino-filial', (req, res) => {
 });
 
 // ─── GET /api/frete/grade ───────────────────────────────────────────────────────
-/** Planilha paginada com faróis (frete peso e frete pago vs piso ANTT). */
+/** Planilha paginada com faróis — só mapeia o slice da página (desempenho). */
 router.get('/grade', (req, res) => {
   let filtered = applyFilters(dados, req.query);
   const sortBy = String(req.query.sortBy || '').trim();
@@ -599,8 +599,10 @@ router.get('/grade', (req, res) => {
   if (sortBy && GRADE_SORT_KEYS.has(sortBy)) {
     filtered = ordenarGradeRows(filtered, sortBy, sortDir);
   }
-  const limit = Math.min(500, Math.max(25, parseInt(req.query.limit, 10) || 150));
-  const paginasTotal = Math.max(1, Math.ceil(filtered.length / limit));
+
+  const total = filtered.length;
+  const limit = Math.min(500, Math.max(25, parseInt(req.query.limit, 10) || 200));
+  const paginasTotal = Math.max(1, Math.ceil(total / limit));
   let page = Math.max(1, parseInt(req.query.page, 10) || 1);
   page = Math.min(page, paginasTotal);
   const start = (page - 1) * limit;
@@ -648,7 +650,7 @@ router.get('/grade', (req, res) => {
   });
 
   res.json({
-    total: filtered.length,
+    total,
     page,
     limit,
     paginasTotal,
