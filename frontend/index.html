@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auditoria · Piso Mínimo de Frete</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+
+<!-- ── LOADING ── -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Carregando dashboard...</div>
+</div>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">🚚</div>
+    <div>
+      <div class="header-title">Auditoria · Piso Mínimo de Frete</div>
+      <div class="header-subtitle">Análise logística por viagem (CT-e)</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Live Data
+    </div>
+  </div>
+</header>
+
+<!-- ── FILTERS ── -->
+<p class="filter-hint" id="filter-hint-bar">
+  <strong>Filtros:</strong> caixas suspensas com várias opções; <strong>nada marcado</strong> = <strong>todos</strong>.
+  Nos gráficos: use os cliques para cruzar dados.
+  <button type="button" class="btn-link-filter" id="btn-clear-chart-filter" hidden>Remover filtro do donut</button>
+</p>
+<div class="filters-bar">
+  <div class="filter-group">
+    <span class="filter-label">Ano</span>
+    <div class="filter-dropdown" data-filter="ano">
+      <button type="button" class="filter-dd-toggle"><span class="filter-dd-summary">Todos</span><span class="filter-dd-caret">▾</span></button>
+      <div class="filter-dd-panel">
+        <div class="filter-dd-toolbar">
+          <button type="button" class="filter-dd-mini" data-action="all">Marcar todos</button>
+          <button type="button" class="filter-dd-mini" data-action="clear">Limpar seleção</button>
+        </div>
+        <div class="filter-dd-options" data-options="ano"></div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Mês</span>
+    <div class="filter-dropdown" data-filter="mes">
+      <button type="button" class="filter-dd-toggle"><span class="filter-dd-summary">Todos</span><span class="filter-dd-caret">▾</span></button>
+      <div class="filter-dd-panel">
+        <div class="filter-dd-toolbar">
+          <button type="button" class="filter-dd-mini" data-action="all">Marcar todos</button>
+          <button type="button" class="filter-dd-mini" data-action="clear">Limpar seleção</button>
+        </div>
+        <div class="filter-dd-options" data-options="mes"></div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Filial</span>
+    <div class="filter-dropdown" data-filter="filial">
+      <button type="button" class="filter-dd-toggle"><span class="filter-dd-summary">Todos</span><span class="filter-dd-caret">▾</span></button>
+      <div class="filter-dd-panel">
+        <div class="filter-dd-toolbar">
+          <button type="button" class="filter-dd-mini" data-action="all">Marcar todos</button>
+          <button type="button" class="filter-dd-mini" data-action="clear">Limpar seleção</button>
+        </div>
+        <div class="filter-dd-options" data-options="filial"></div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-group filter-group-wide">
+    <span class="filter-label">Cliente</span>
+    <div class="filter-dropdown" data-filter="cliente">
+      <button type="button" class="filter-dd-toggle"><span class="filter-dd-summary">Todos</span><span class="filter-dd-caret">▾</span></button>
+      <div class="filter-dd-panel filter-dd-panel--wide">
+        <div class="filter-dd-toolbar">
+          <button type="button" class="filter-dd-mini" data-action="all">Marcar todos</button>
+          <button type="button" class="filter-dd-mini" data-action="clear">Limpar seleção</button>
+        </div>
+        <div class="filter-dd-options filter-dd-options--many" data-options="cliente"></div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Contrato</span>
+    <div class="filter-dropdown" data-filter="contrato">
+      <button type="button" class="filter-dd-toggle"><span class="filter-dd-summary">Todos</span><span class="filter-dd-caret">▾</span></button>
+      <div class="filter-dd-panel">
+        <div class="filter-dd-toolbar">
+          <button type="button" class="filter-dd-mini" data-action="all">Marcar todos</button>
+          <button type="button" class="filter-dd-mini" data-action="clear">Limpar seleção</button>
+        </div>
+        <div class="filter-dd-options" data-options="contrato"></div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Tipo CTe</span>
+    <div class="filter-dropdown" data-filter="tipoCte">
+      <button type="button" class="filter-dd-toggle"><span class="filter-dd-summary">Todos</span><span class="filter-dd-caret">▾</span></button>
+      <div class="filter-dd-panel">
+        <div class="filter-dd-toolbar">
+          <button type="button" class="filter-dd-mini" data-action="all">Marcar todos</button>
+          <button type="button" class="filter-dd-mini" data-action="clear">Limpar seleção</button>
+        </div>
+        <div class="filter-dd-options" data-options="tipoCte"></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-apply" id="btn-apply">Aplicar filtros</button>
+  <button class="btn-reset" id="btn-reset">Limpar tudo</button>
+</div>
+
+<!-- ── TABS ── -->
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="overview">📊 Visão geral</button>
+  <button class="tab-btn" data-tab="embarque">📦 Condição embarcador</button>
+  <button class="tab-btn" data-tab="pagamento">🤝 Pagamento Agregado / Terceiro</button>
+  <button class="tab-btn" data-tab="filiais">🏢 Por filial</button>
+  <button class="tab-btn" data-tab="destinos">📍 Destino × filial</button>
+  <button class="tab-btn" data-tab="planilha">📋 Planilha / farol</button>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main-content">
+
+  <!-- ═══ OVERVIEW ═══ -->
+  <div id="panel-overview" class="tab-panel active">
+
+    <p class="section-title">resumo logístico · cada linha = uma viagem</p>
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--accent:var(--blue)">
+        <div class="kpi-label">Viagens no filtro</div>
+        <div class="kpi-value mono" id="kpi-registros">—</div>
+        <div class="kpi-sub">CT-e após filtros aplicados</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--red)">
+        <div class="kpi-label">Embarcador · abaixo do piso</div>
+        <div class="kpi-value mono" id="kpi-emb-ab">—</div>
+        <div class="kpi-sub"><span id="kpi-emb-ab-p">—</span> · Frete peso vs tabela ANTT</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--green)">
+        <div class="kpi-label">Embarcador · dentro do piso</div>
+        <div class="kpi-value mono" id="kpi-emb-dentro">—</div>
+        <div class="kpi-sub"><span id="kpi-emb-dentro-p">—</span> · frete peso ≥ mín. ANTT</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--cyan)">
+        <div class="kpi-label">Pagamento Ag/Ter</div>
+        <div class="kpi-value mono" id="kpi-pag-total">—</div>
+        <div class="kpi-sub">viagens só Agregado + Terceiro</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--purple)">
+        <div class="kpi-label">Pagamento · abaixo do piso</div>
+        <div class="kpi-value mono" id="kpi-pag-ab">—</div>
+        <div class="kpi-sub"><span id="kpi-pag-ab-p">—</span> · Frete BIPE vs ANTT</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--green)">
+        <div class="kpi-label">Pagamento · dentro do piso</div>
+        <div class="kpi-value mono" id="kpi-pag-dentro">—</div>
+        <div class="kpi-sub"><span id="kpi-pag-dentro-p">—</span> · BIPE ≥ mín. ANTT</div>
+      </div>
+    </div>
+
+    <p class="section-title">por tipo de contrato · frota usa frete peso · ag/ter usa BIPE</p>
+    <div class="farol-grid">
+      <div class="farol-card" id="farol-frota">
+        <div class="farol-header">
+          <div>
+            <div class="farol-title">Frota</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px" class="farol-total">—</div>
+          </div>
+          <div class="farol-icon frota">🚛</div>
+        </div>
+        <div class="farol-semaforo">
+          <div class="semaforo verde"></div>
+          <div>
+            <div class="farol-perc verde">—</div>
+            <div class="farol-desc">dentro do piso (≥ mín. ANTT)</div>
+          </div>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill verde" style="width:0%"></div>
+        </div>
+        <div class="farol-stats farol-stats-3">
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-abaixo" style="color:var(--red)">—</div>
+            <div class="farol-stat-lbl">Abaixo</div>
+          </div>
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-dentro" style="color:var(--green)">—</div>
+            <div class="farol-stat-lbl">Dentro piso</div>
+          </div>
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-pcta" style="font-family:var(--font-mono);font-size:13px">—</div>
+            <div class="farol-stat-lbl">% Abaixo</div>
+          </div>
+        </div>
+      </div>
+      <div class="farol-card" id="farol-agregado">
+        <div class="farol-header">
+          <div>
+            <div class="farol-title">Agregado</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px" class="farol-total">—</div>
+          </div>
+          <div class="farol-icon agregado">🤝</div>
+        </div>
+        <div class="farol-semaforo">
+          <div class="semaforo verde"></div>
+          <div>
+            <div class="farol-perc verde">—</div>
+            <div class="farol-desc">dentro do piso (≥ mín. ANTT · BIPE)</div>
+          </div>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill verde" style="width:0%"></div>
+        </div>
+        <div class="farol-stats farol-stats-3">
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-abaixo" style="color:var(--red)">—</div>
+            <div class="farol-stat-lbl">Abaixo</div>
+          </div>
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-dentro" style="color:var(--green)">—</div>
+            <div class="farol-stat-lbl">Dentro piso</div>
+          </div>
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-pcta" style="font-family:var(--font-mono);font-size:13px">—</div>
+            <div class="farol-stat-lbl">% Abaixo</div>
+          </div>
+        </div>
+      </div>
+      <div class="farol-card" id="farol-terceiro">
+        <div class="farol-header">
+          <div>
+            <div class="farol-title">Terceiro</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px" class="farol-total">—</div>
+          </div>
+          <div class="farol-icon terceiro">📦</div>
+        </div>
+        <div class="farol-semaforo">
+          <div class="semaforo verde"></div>
+          <div>
+            <div class="farol-perc verde">—</div>
+            <div class="farol-desc">dentro do piso (≥ mín. ANTT · BIPE)</div>
+          </div>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill verde" style="width:0%"></div>
+        </div>
+        <div class="farol-stats farol-stats-3">
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-abaixo" style="color:var(--red)">—</div>
+            <div class="farol-stat-lbl">Abaixo</div>
+          </div>
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-dentro" style="color:var(--green)">—</div>
+            <div class="farol-stat-lbl">Dentro piso</div>
+          </div>
+          <div class="farol-stat">
+            <div class="farol-stat-val farol-n-pcta" style="font-family:var(--font-mono);font-size:13px">—</div>
+            <div class="farol-stat-lbl">% Abaixo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-title">evolução mensal · % de viagens em cada faixa</p>
+    <div class="chart-row">
+      <div class="chart-card" style="flex:2">
+        <div class="chart-title">Embarcador — Frete peso vs piso ANTT</div>
+        <div class="chart-subtitle">Linhas = % das viagens abaixo ou dentro do piso</div>
+        <div class="chart-container tall">
+          <canvas id="chart-tendencia-emb"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" style="flex:2">
+        <div class="chart-title">Pagamento Ag/Ter — Frete BIPE vs piso</div>
+        <div class="chart-subtitle">Linhas = % das viagens abaixo ou dentro do piso (BIPE)</div>
+        <div class="chart-container tall">
+          <canvas id="chart-tendencia-pag"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-title">Distribuição embarcador</div>
+        <div class="chart-subtitle">Frete peso documentado × tabela ANTT</div>
+        <div class="chart-container">
+          <canvas id="chart-status-emb"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Distribuição pagamento BIPE</div>
+        <div class="chart-subtitle">Só Agregado + Terceiro</div>
+        <div class="chart-container">
+          <canvas id="chart-status-pag"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card full">
+        <div class="chart-title">Volume por contrato — Mix de faixas</div>
+        <div class="chart-subtitle">Abaixo vs dentro · Frota pelo peso · Ag/Ter pelo BIPE</div>
+        <div class="chart-container tall">
+          <canvas id="chart-farol-mix"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-title">por embarcador · por pagamento Ag/Ter · por filial · barras apenas nesta aba</p>
+    <div class="chart-row">
+      <div class="chart-card" style="flex:1">
+        <div class="chart-title">Top 15 embarcadores</div>
+        <div class="chart-subtitle">% abaixo / dentro do piso (frete peso)</div>
+        <div class="chart-container tall">
+          <canvas id="chart-viagens-embarcador"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" style="flex:1">
+        <div class="chart-title">Top 15 · Ag/Ter pagamento BIPE</div>
+        <div class="chart-subtitle">% abaixo / dentro vs piso</div>
+        <div class="chart-container tall">
+          <canvas id="chart-viagens-pagamento"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card full">
+        <div class="chart-title">Filiais · % viagens abaixo do piso</div>
+        <div class="chart-subtitle">Clique na barra para filtrar</div>
+        <div class="chart-container tall">
+          <canvas id="chart-filiais"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-title">maior risco financeiro/regulatório — maior |diferença ANTT BIPE × quantidade|</p>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Viagens com maior desvio (referência planilha)</div>
+        <div class="table-count">top 20</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>BIPE</th>
+              <th>Filial</th>
+              <th>Cliente</th>
+              <th>Contrato</th>
+              <th>Destino</th>
+              <th>Piso ANTT</th>
+              <th>Valor analisado</th>
+              <th>Diferença</th>
+              <th>Faixa</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-desvios" class="tbody-click-bipe">
+            <tr><td colspan="9"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ EMBARCADOR ═══ -->
+  <div id="panel-embarque" class="tab-panel">
+    <p class="section-title">condição declarada pelo embarcador — Frete peso (documentos) vs tabela ANTT · gráficos na aba <strong>Visão geral</strong></p>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Por embarcador</div>
+        <div class="table-count" id="count-embarcador">—</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Viagens</th>
+              <th>Abaixo piso</th>
+              <th>Dentro do piso</th>
+              <th>% Abaixo</th>
+              <th>% Dentro</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-viagens-embarcador">
+            <tr><td colspan="6"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGAMENTO ═══ -->
+  <div id="panel-pagamento" class="tab-panel">
+    <p class="section-title">o que você paga ao prestador — Agregado e Terceiro · gráficos na aba <strong>Visão geral</strong></p>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Por cliente · pagamento BIPE</div>
+        <div class="table-count" id="count-pagamento">—</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Viagens Ag/Ter</th>
+              <th>Abaixo piso</th>
+              <th>Dentro do piso</th>
+              <th>% Abaixo</th>
+              <th>% Dentro</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-viagens-pagamento">
+            <tr><td colspan="6"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FILIAIS ═══ -->
+  <div id="panel-filiais" class="tab-panel">
+    <p class="section-title">por filial — frete peso vs ANTT · gráfico na aba <strong>Visão geral</strong></p>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Detalhe por filial</div>
+        <div class="table-count">todas</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Sigla</th>
+              <th>Filial</th>
+              <th>Viagens</th>
+              <th>Abaixo</th>
+              <th>Dentro piso</th>
+              <th>% Abaixo</th>
+              <th>% Dentro</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-filiais">
+            <tr><td colspan="7"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DESTINO × FILIAL ═══ -->
+  <div id="panel-destinos" class="tab-panel">
+    <p class="section-title">por destino e filial · frete peso vs piso (embarcador) · valor análise vs piso (Farol BIPE) · margem média só Ag/Ter (pago ÷ peso)</p>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Agrupado destino × filial</div>
+        <div class="table-count" id="count-destino-filial">—</div>
+      </div>
+      <div class="table-wrap table-wrap-scroll">
+        <table class="table-destinos">
+          <thead id="thead-destinos">
+            <tr>
+              <th data-dsort="siglaFilial"><span class="th-sort-inner">Filial</span></th>
+              <th data-dsort="destino"><span class="th-sort-inner">Destino</span></th>
+              <th data-dsort="qtd" class="th-num"><span class="th-sort-inner">Viagens</span></th>
+              <th data-dsort="embAb" class="th-num"><span class="th-sort-inner">Emb. abaixo</span></th>
+              <th data-dsort="embDentro" class="th-num"><span class="th-sort-inner">Emb. dentro</span></th>
+              <th data-dsort="pagAb" class="th-num"><span class="th-sort-inner">Pag. abaixo</span></th>
+              <th data-dsort="pagDentro" class="th-num"><span class="th-sort-inner">Pag. dentro</span></th>
+              <th data-dsort="percPagAbaixo" class="th-num"><span class="th-sort-inner">% Pag. abaixo</span></th>
+              <th data-dsort="margemPagoPct" class="th-num"><span class="th-sort-inner">Margem média</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-destinos">
+            <tr><td colspan="9"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PLANILHA ═══ -->
+  <div id="panel-planilha" class="tab-panel">
+    <p class="section-title">visão planilha · clique nos títulos para ordenar · clique na linha = detalhe JSON · Frota: Farol BIPE = frete peso</p>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">CT-e filtrados</div>
+        <div class="table-count" id="grade-meta">—</div>
+      </div>
+      <div class="grade-toolbar">
+        <button type="button" class="btn-page" id="grade-prev" disabled>← Anterior</button>
+        <span class="grade-page-lbl" id="grade-page-lbl">Página 1</span>
+        <button type="button" class="btn-page" id="grade-next">Próxima →</button>
+      </div>
+      <div class="table-wrap table-wrap-grade">
+        <table class="table-grade">
+          <thead id="thead-grade">
+            <tr>
+              <th data-sort="bipe" scope="col"><span class="th-sort-inner">BIPE</span></th>
+              <th data-sort="ano" scope="col"><span class="th-sort-inner">Ano</span></th>
+              <th data-sort="mes" scope="col"><span class="th-sort-inner">Mês</span></th>
+              <th data-sort="filial" scope="col"><span class="th-sort-inner">Filial</span></th>
+              <th data-sort="cliente" scope="col"><span class="th-sort-inner">Cliente</span></th>
+              <th data-sort="destino" scope="col"><span class="th-sort-inner">Destino</span></th>
+              <th data-sort="contrato" scope="col"><span class="th-sort-inner">Contrato</span></th>
+              <th data-sort="pisoMinimo" scope="col" class="th-num"><span class="th-sort-inner">Piso mín.</span></th>
+              <th data-sort="fretePeso" scope="col" class="th-num"><span class="th-sort-inner">Frete peso</span></th>
+              <th data-sort="faixaFretePeso" scope="col"><span class="th-sort-inner" title="Frete peso vs piso">Farol peso</span></th>
+              <th data-sort="fretePago" scope="col" class="th-num"><span class="th-sort-inner">Frete pago</span></th>
+              <th data-sort="diferencaAntt" scope="col" class="th-num"><span class="th-sort-inner">Dif. ANTT</span></th>
+              <th data-sort="faixaFretePago" scope="col"><span class="th-sort-inner" title="Frota = frete peso; Ag/Ter = BIPE">Farol BIPE</span></th>
+              <th data-sort="margemPagoPct" scope="col" class="th-num margem-col"><span class="th-sort-inner" title="Só Ag/Ter">Margem paga</span></th>
+              <th data-sort="margemMinPisoPct" scope="col" class="th-num margem-col"><span class="th-sort-inner" title="BIPE &lt; piso">Margem mín.</span></th>
+              <th data-sort="placa" scope="col"><span class="th-sort-inner">Placa</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-grade" class="tbody-click-bipe">
+            <tr><td colspan="16"><div class="empty-state"><p>Carregando...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grade-legend-sparse">
+        <span class="leg-dot dot-red"></span> abaixo do piso
+        <span class="leg-dot dot-green"></span> dentro do piso (≥ mín. ANTT)
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-content -->
+
+<div id="modal-viagem" class="modal-viagem" hidden aria-hidden="true">
+  <div class="modal-viagem-backdrop" data-close-modal></div>
+  <div class="modal-viagem-panel" role="dialog" aria-labelledby="modal-viagem-title">
+    <div class="modal-viagem-head">
+      <h2 id="modal-viagem-title">Detalhe da viagem</h2>
+      <button type="button" class="modal-viagem-x" data-close-modal aria-label="Fechar">×</button>
+    </div>
+    <p class="modal-viagem-bipe mono" id="modal-viagem-bipe"></p>
+    <div class="modal-viagem-body" id="modal-viagem-body">
+      <p class="empty-state">Carregando…</p>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
