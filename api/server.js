@@ -1,12 +1,7 @@
 /**
- * Serverless entrypoint para Vercel.
- * O Vercel executa este arquivo a partir de /var/task/api/,
- * então usamos __dirname para resolver o path do app corretamente.
+ * Entry serverless na Vercel · export direto do app Express
+ * (bundler nativo; ver https://vercel.com/guides/using-express-with-vercel )
  */
 const path = require('path');
-const serverless = require('serverless-http');
 
-// Garante que require('../backend/app') funcione independente do cwd
-const app = require(path.join(__dirname, '../backend/app'));
-
-module.exports = serverless(app);
+module.exports = require(path.join(__dirname, '..', 'backend', 'app'));

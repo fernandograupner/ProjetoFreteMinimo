@@ -34,19 +34,22 @@ frete-dashboard/
 
 ## 🚀 Como Rodar (local)
 
+Use a pasta **deste projeto** (onde estão `package.json`, `backend/` e `frontend/`), não outro app na porta 3000.
+
 ### Opção A — só backend (como antes)
 ```bash
 cd backend
 npm install
 node server.js
 ```
-Acesse: **http://localhost:3001**
+Abra o painel em **http://localhost:3001/** (ou `/index.html`). A API continua em **`/api/*`**.
 
-### Opção B — pela raiz (igual ao build da Vercel)
+### Opção B — pela raiz (recomendado)
 ```bash
 npm install
 npm start
 ```
+Mesma coisa: dashboard em **http://localhost:3001/** — **não** use `localhost:3000` a menos que seja outro servidor.
 
 ---
 
@@ -55,11 +58,14 @@ npm start
 1. Crie conta em [vercel.com](https://vercel.com) e conecte ao GitHub.
 2. **Import** o repositório [ProjetoFreteMinimo](https://github.com/fernandograupner/ProjetoFreteMinimo).
 3. **Root Directory**: deixe **vazio** (a raiz do repositório tem de ser onde estão `vercel.json`, `api/` e `backend/`).
-4. **Framework Preset**: Other · **Build Command**: vazio ou `npm run vercel-build` · **Output Directory**: vazio  
-5. **Install Command**: `npm install` (na raiz; o `package.json` na raiz instala Express, cors e serverless-http).
+4. **Framework Preset**: Other · **Build Command**: vazio ou `npm run vercel-build` · **Output Directory**: em branco na UI (o `vercel.json` define `frontend`).  
+5. **Install Command**: `npm install` (na raiz; instala Express e cors).
 6. Deploy. A URL gerada (`https://xxx.vercel.app`) servirá o HTML e `/api/*` pelo mesmo domínio (o frontend já usa `/api` em relação à origem).
 
-**Observações**
+**Erros comuns no deploy**
+
+- `path-to-regexp` / rewrite inválido: use sempre o `vercel.json` deste repo (rotas `/api/:path*`, não `/(.*)`).
+- Plano gratuito (Hobby): evite `maxDuration` altos no JSON; timeout no cold start com `data.json` grande aparece só na primeira requisição.
 
 - Se aparecer **404**, confira na Vercel (**Settings → General**) se **Root Directory** está vazio e faça novo deploy depois do `git pull` dos ficheiros `vercel.json` e `api/server.js`.
 - O `data.json` é carregado no cold start da função; base muito grande pode deixar a primeira abertura mais lenta.
