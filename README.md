@@ -9,7 +9,7 @@ Painel executivo para análise de compliance do piso mínimo de frete (ANTT) por
 ```
 frete-dashboard/
 ├── api/
-│   └── server.js          # servidor serverless na Vercel (rewrite → aqui)
+│   └── index.js           # serverless na Vercel (rewrite → /api)
 ├── package.json           # deps na raiz (deploy Vercel)
 ├── vercel.json
 ├── backend/
@@ -67,7 +67,7 @@ Mesma coisa: dashboard em **http://localhost:3001/** — **não** use `localhost
 - `path-to-regexp` / rewrite inválido: use sempre o `vercel.json` deste repo (rotas `/api/:path*`, não `/(.*)`).
 - Plano gratuito (Hobby): evite `maxDuration` altos no JSON; timeout no cold start com `data.json` grande aparece só na primeira requisição.
 
-- Se aparecer **404**, confira na Vercel (**Settings → General**) se **Root Directory** está vazio e faça novo deploy depois do `git pull` dos ficheiros `vercel.json` e `api/server.js`.
+- Se aparecer **404** nas chamadas `/api/...`, confira o `vercel.json` (rewrites → `/api` e ficheiro `api/index.js`) e faça redeploy.
 - O `data.json` é carregado no cold start da função; base muito grande pode deixar a primeira abertura mais lenta.
 - Plano gratuito há limites de execução e tamanho; monitore no painel da Vercel se algo falhar no build.
 

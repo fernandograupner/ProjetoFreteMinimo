@@ -2,12 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "frontend",
   "functions": {
-    "api/server.js": {
+    "api/index.js": {
       "includeFiles": "backend/**"
     }
   },
   "rewrites": [
-    { "source": "/api", "destination": "/api/server" },
-    { "source": "/api/:path*", "destination": "/api/server" }
+    { "source": "/api/:path*", "destination": "/api" }
   ]
 }
