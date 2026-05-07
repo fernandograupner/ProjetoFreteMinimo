@@ -18,8 +18,10 @@ const FILTER_KEYS = ['ano', 'mes', 'filial', 'contrato', 'tipoCte', 'cliente'];
 
 const GRADE_LIMIT = 200;
 
-const CHART_AXIS = '#e7edf8';
-const CHART_AXIS_SOFT = '#b8c4d9';
+const CHART_AXIS = '#334155';
+const CHART_AXIS_SOFT = '#475569';
+const CHART_GRID = 'rgba(15,23,42,0.07)';
+const CHART_GREEN = '#2d6a4f';
 
 if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
   Chart.register(ChartDataLabels);
@@ -253,7 +255,7 @@ function getSituacaoTag(s) {
 
 function fmtMargemPctCell(v) {
   if (v == null || v === '') {
-    return '<span style="color:var(--text-muted)" class="mono">—</span>';
+    return '<span style="color:var(--text-muted);font-weight:600" class="mono">—</span>';
   }
   return `<span class="mono">${Number(v).toFixed(1)}%</span>`;
 }
@@ -347,11 +349,11 @@ async function init() {
   } catch (e) {
     console.error(e);
     document.getElementById('loading').innerHTML = `
-      <div style="text-align:center;color:#ef4444;max-width:420px;margin:0 auto;padding:16px;">
+      <div style="text-align:center;color:#dc2626;max-width:420px;margin:0 auto;padding:16px;">
         <div style="font-size:32px">⚠️</div>
         <p style="margin-top:12px;font-size:13px">Não foi possível carregar os dados.<br>
-        Confira o terminal (<code style="background:#1a2540;padding:2px 8px;border-radius:4px">npm start</code> na pasta backend).<br><br>
-        <span style="color:var(--text-muted,#8892a4);font-family:monospace;font-size:11px">${String(e.message || e)}</span></p>
+        Confira o terminal (<code style="background:#e2e8f0;padding:2px 8px;border-radius:4px">npm start</code> na pasta backend).<br><br>
+        <span style="color:var(--text-muted,#64748b);font-family:monospace;font-size:11px;font-weight:600">${String(e.message || e)}</span></p>
       </div>`;
   }
 }
@@ -483,7 +485,7 @@ function renderizarTabelaDestinoFilial() {
         <tr>
           <td>
             <span class="tag tag-blue mono">${escHtml(r.siglaFilial)}</span>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${escHtml(r.nomeFilial)}</div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-top:4px">${escHtml(r.nomeFilial)}</div>
           </td>
           <td style="max-width:16rem">${escHtml(r.destino)}</td>
           <td class="mono num">${fmt.num(r.qtd)}</td>
@@ -624,12 +626,12 @@ async function loadOverview(q) {
   renderTendenciaLinha('chart-tendencia-emb', tendencia,
     ['pctEmbAb', 'pctEmbDentro'],
     ['% Abaixo', '% Dentro'],
-    ['#ef4444', '#10b981'],
+    ['#dc2626', CHART_GREEN],
     'tendEmb');
   renderTendenciaLinha('chart-tendencia-pag', tendencia,
     ['pctPagAb', 'pctPagDentro'],
     ['% Abaixo BIPE', '% Dentro'],
-    ['#ef4444', '#10b981'],
+    ['#dc2626', CHART_GREEN],
     'tendPag');
   renderTripDonut('chart-status-emb', emb.abaixo, emb.dentro, 'donutEmb', 'sitEmb');
   renderTripDonut('chart-status-pag', pag.abaixo, pag.dentro, 'donutPag', 'sitPag');
@@ -684,14 +686,14 @@ function renderTendenciaLinha(canvasId, series, keys, labels, colors, chartKey) 
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 } },
+        legend: { labels: { color: CHART_AXIS, font: { size: 11, weight: '600' }, boxWidth: 12 } },
         datalabels: {
           align: 'top',
           offset: 2,
           clip: false,
-          color: '#dbe4f7',
+          color: '#334155',
           textStrokeWidth: 2,
-          textStrokeColor: 'rgba(0,0,0,0.45)',
+          textStrokeColor: 'rgba(255,255,255,0.9)',
           font: { size: 8, weight: '600' },
           formatter: v => {
             const n = Number(v);
@@ -706,13 +708,13 @@ function renderTendenciaLinha(canvasId, series, keys, labels, colors, chartKey) 
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: CHART_AXIS, font: { size: 10 } },
-          title: { display: true, text: 'Clique num ponto para filtrar período', color: CHART_AXIS_SOFT, font: { size: 10 } }
+          grid: { color: CHART_GRID },
+          ticks: { color: CHART_AXIS, font: { size: 10, weight: '600' } },
+          title: { display: true, text: 'Clique num ponto para filtrar período', color: CHART_AXIS_SOFT, font: { size: 10, weight: '600' } }
         },
         y: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: CHART_AXIS, font: { size: 10 }, callback: v => `${v}%` },
+          grid: { color: CHART_GRID },
+          ticks: { color: CHART_AXIS, font: { size: 10, weight: '600' }, callback: v => `${v}%` },
           suggestedMin: 0,
           suggestedMax: 100
         }
@@ -746,7 +748,7 @@ function renderTripDonut(canvasId, abaixo, dentro, chartKey, overlayKey) {
       labels: ['Abaixo do piso', 'Dentro do piso'],
       datasets: [{
         data: [abaixo, dentro],
-        backgroundColor: ['#ef4444', '#10b981'],
+        backgroundColor: ['#dc2626', CHART_GREEN],
         borderColor: 'transparent',
         hoverOffset: 6
       }]
@@ -758,7 +760,7 @@ function renderTripDonut(canvasId, abaixo, dentro, chartKey, overlayKey) {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 }
+          labels: { color: CHART_AXIS, font: { size: 11, weight: '600' }, boxWidth: 12 }
         },
         subtitle: {
           display: true,
@@ -766,7 +768,7 @@ function renderTripDonut(canvasId, abaixo, dentro, chartKey, overlayKey) {
             ? 'Clique para filtrar faixa vs frete peso'
             : 'Clique para filtrar faixa BIPE × piso (só contratos Agregado/Terceiro)',
           color: CHART_AXIS_SOFT,
-          font: { size: 9 }
+          font: { size: 9, weight: '600' }
         },
         datalabels: {
           color: '#fff',
@@ -809,8 +811,8 @@ function renderFarolMixChart(farolData) {
     data: {
       labels,
       datasets: [
-        { label: 'Abaixo', data: farolData.map(d => d.abaixo), backgroundColor: 'rgba(239,68,68,0.85)' },
-        { label: 'Dentro piso', data: farolData.map(d => d.dentro), backgroundColor: 'rgba(16,185,129,0.85)' }
+        { label: 'Abaixo', data: farolData.map(d => d.abaixo), backgroundColor: 'rgba(220,38,38,0.85)' },
+        { label: 'Dentro piso', data: farolData.map(d => d.dentro), backgroundColor: 'rgba(45,106,79,0.85)' }
       ]
     },
     options: {
@@ -818,7 +820,7 @@ function renderFarolMixChart(farolData) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 } },
+        legend: { labels: { color: CHART_AXIS, font: { size: 11, weight: '600' }, boxWidth: 12 } },
         tooltip: {
           callbacks: {
             footer: items => {
@@ -833,7 +835,7 @@ function renderFarolMixChart(farolData) {
           display: true,
           text: 'Clique na barra (contrato) para filtrar',
           color: CHART_AXIS_SOFT,
-          font: { size: 10 },
+          font: { size: 10, weight: '600' },
           padding: { bottom: 4 }
         },
         datalabels: {
@@ -848,8 +850,8 @@ function renderFarolMixChart(farolData) {
         }
       },
       scales: {
-        x: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: CHART_AXIS } },
-        y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: CHART_AXIS } }
+        x: { stacked: true, grid: { color: CHART_GRID }, ticks: { color: CHART_AXIS, font: { weight: '600' } } },
+        y: { stacked: true, grid: { color: CHART_GRID }, ticks: { color: CHART_AXIS, font: { weight: '600' } } }
       },
       onClick(ev, elems) {
         if (!elems.length) return;
@@ -872,11 +874,11 @@ function renderDesvios(data) {
 
   tbody.innerHTML = data.map(r => `
     <tr data-bipe="${escAttr(String(r.bipe))}">
-      <td class="mono" style="color:var(--text-secondary)">${escHtml(r.bipe)}</td>
+      <td class="mono" style="color:var(--text-secondary);font-weight:600">${escHtml(r.bipe)}</td>
       <td><strong>${escHtml(r.filial)}</strong></td>
       <td>${escHtml(r.cliente)}</td>
       <td>${getContratoTag(r.contrato)}</td>
-      <td style="color:var(--text-secondary);font-size:12px">${escHtml(String(r.destino || ''))}</td>
+      <td style="color:var(--text-secondary);font-size:12px;font-weight:600">${escHtml(String(r.destino || ''))}</td>
       <td class="mono">${fmt.currency(r.freteAntt)}</td>
       <td class="mono">${fmt.currency(r.valorComparado)}</td>
       <td class="${Number(r.diferenca) >= 0 ? 'num-positive' : 'num-negative'}">${fmt.diff(r.diferenca)}</td>
@@ -903,7 +905,7 @@ function renderViagensTable(tbody, rows) {
 
   tbody.innerHTML = rows.map(r => `
     <tr>
-      <td><strong>${escHtml(r.cliente)}</strong><br><span class="mono" style="font-size:10px;color:var(--text-secondary)">${escHtml(r.cnpjTruncado)}</span></td>
+      <td><strong>${escHtml(r.cliente)}</strong><br><span class="mono" style="font-size:10px;color:var(--text-secondary);font-weight:600">${escHtml(r.cnpjTruncado)}</span></td>
       <td class="mono">${fmt.num(r.qtd)}</td>
       <td class="mono" style="color:var(--red)">${fmt.num(r.abaixo)}</td>
       <td class="mono" style="color:var(--green)">${fmt.num(r.dentro)}</td>
@@ -930,12 +932,12 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
         {
           label: '% Abaixo',
           data: sliceData.map(d => Number(d.percAbaixo) || 0),
-          backgroundColor: 'rgba(239,68,68,0.9)'
+          backgroundColor: 'rgba(220,38,38,0.9)'
         },
         {
           label: '% Dentro',
           data: sliceData.map(d => Number(d.percDentro) || 0),
-          backgroundColor: 'rgba(16,185,129,0.9)'
+          backgroundColor: 'rgba(45,106,79,0.9)'
         }
       ]
     },
@@ -944,7 +946,7 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: CHART_AXIS, font: { size: 11 }, boxWidth: 12 } },
+        legend: { labels: { color: CHART_AXIS, font: { size: 11, weight: '600' }, boxWidth: 12 } },
         tooltip: {
           callbacks: {
             label: c => ` ${c.dataset.label}: ${Number(c.raw).toFixed(1)}% (${fmt.num(sliceData[c.dataIndex].qtd)} viagens)`
@@ -954,7 +956,7 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
           display: true,
           text: 'Clique numa faixa/barra horizontal para filtrar cliente',
           color: CHART_AXIS_SOFT,
-          font: { size: 10 }
+          font: { size: 10, weight: '600' }
         },
         datalabels: {
           color: '#ffffff',
@@ -971,13 +973,13 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
         x: {
           stacked: true,
           max: 100,
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: CHART_AXIS, callback: v => `${v}%` }
+          grid: { color: CHART_GRID },
+          ticks: { color: CHART_AXIS, font: { weight: '600' }, callback: v => `${v}%` }
         },
         y: {
           stacked: true,
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: CHART_AXIS, font: { size: 10 }, autoSkip: false }
+          grid: { color: CHART_GRID },
+          ticks: { color: CHART_AXIS, font: { size: 10, weight: '600' }, autoSkip: false }
         }
       },
       onClick(ev, elems) {
@@ -1031,7 +1033,7 @@ function renderFiliaisChart(data) {
         data: sorted.map(d => Number(d.percAbaixo) || 0),
         backgroundColor: sorted.map(d => {
           const p = Number(d.percAbaixo) || 0;
-          return p >= 40 ? 'rgba(239,68,68,0.85)' : p >= 20 ? 'rgba(245,158,11,0.85)' : 'rgba(148,163,184,0.6)';
+          return p >= 40 ? 'rgba(220,38,38,0.85)' : p >= 20 ? 'rgba(217,119,6,0.85)' : 'rgba(148,163,184,0.55)';
         })
       }]
     },
@@ -1050,16 +1052,16 @@ function renderFiliaisChart(data) {
           display: true,
           text: 'Clique para filtrar filial',
           color: CHART_AXIS_SOFT,
-          font: { size: 10 }
+          font: { size: 10, weight: '600' }
         },
         datalabels: {
           anchor: 'end',
           align: 'start',
           offset: 6,
           clip: false,
-          color: '#e2e8f0',
+          color: '#1e293b',
           textStrokeWidth: 2,
-          textStrokeColor: 'rgba(0,0,0,0.4)',
+          textStrokeColor: 'rgba(255,255,255,0.85)',
           font: { size: 9, weight: '600' },
           formatter: v => {
             const n = Number(v);
@@ -1070,10 +1072,10 @@ function renderFiliaisChart(data) {
       scales: {
         x: {
           suggestedMax: 100,
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: { color: CHART_AXIS, callback: v => `${v}%` }
+          grid: { color: CHART_GRID },
+          ticks: { color: CHART_AXIS, font: { weight: '600' }, callback: v => `${v}%` }
         },
-        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: CHART_AXIS, font: { size: 10 }, autoSkip: false } }
+        y: { grid: { color: CHART_GRID }, ticks: { color: CHART_AXIS, font: { size: 10, weight: '600' }, autoSkip: false } }
       },
       onClick(ev, elems) {
         if (!elems.length) return;
