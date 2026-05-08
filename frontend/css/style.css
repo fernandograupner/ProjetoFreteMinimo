@@ -441,6 +441,35 @@ body {
   text-align: right;
 }
 
+/* Cabeçalhos ordenáveis — demais tabelas (desvios, embarcador, pagamento, filiais) */
+.table-sortable thead th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table-sortable thead th[data-sort]:hover .th-sort-inner {
+  color: var(--green);
+}
+
+.table-sortable thead th.sorted-asc .th-sort-inner::after,
+.table-sortable thead th.sorted-desc .th-sort-inner::after {
+  margin-left: 4px;
+  font-size: 9px;
+  opacity: 0.9;
+}
+
+.table-sortable thead th.sorted-asc .th-sort-inner::after {
+  content: '▲';
+}
+
+.table-sortable thead th.sorted-desc .th-sort-inner::after {
+  content: '▼';
+}
+
+.table-sortable thead th.th-num {
+  text-align: right;
+}
+
 .table-wrap-scroll {
   max-height: 70vh;
   overflow: auto;
@@ -955,6 +984,12 @@ tbody.tbody-click-bipe tr[data-bipe]:hover {
 
 .chart-container.tall {
   height: 320px;
+}
+
+.chart-margem-filial-wrap.chart-container.tall {
+  min-height: 460px;
+  height: min(640px, 82vh);
+  max-height: 86vh;
 }
 
 /* ── TABLE ── */

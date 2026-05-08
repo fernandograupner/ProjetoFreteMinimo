@@ -14,6 +14,18 @@ let gradeSort = { key: '', dir: 'asc' };
 let destinoFilialRows = [];
 let destinoSort = { key: 'qtd', dir: 'desc' };
 
+let desviosRows = [];
+let desviosSort = { key: 'diferenca', dir: 'desc' };
+let embarcadorRows = [];
+let embarcadorSort = { key: 'qtd', dir: 'desc' };
+let pagamentoRows = [];
+let pagamentoSort = { key: 'qtd', dir: 'desc' };
+let filiaisRows = [];
+let filiaisSort = { key: 'qtd', dir: 'desc' };
+
+/** Drill pelo gráfico de margem por filial (segundo clique / dblclick limpa). */
+let margemFilialDrillSigla = null;
+
 const FILTER_KEYS = ['ano', 'mes', 'filial', 'contrato', 'tipoCte', 'cliente'];
 
 const GRADE_LIMIT = 200;
@@ -134,19 +146,6 @@ function clearAllFilterChecks() {
   });
 }
 
-function findClienteKeyByNome(nome) {
-  const box = optionsBox('cliente');
-  if (!box || !nome) return null;
-  const labels = box.querySelectorAll('label.filter-dd-opt');
-  for (const lab of labels) {
-    const t = lab.querySelector('.filter-dd-opt-txt');
-    if (t && t.textContent.trim() === String(nome).trim()) {
-      return lab.querySelector('input')?.value || null;
-    }
-  }
-  return null;
-}
-
 function wireFilterDropdowns() {
   document.querySelectorAll('.filter-dropdown').forEach(wrap => {
     const toggle = wrap.querySelector('.filter-dd-toggle');
@@ -177,6 +176,7 @@ function wireFilterDropdowns() {
     updateFilterSummary(key);
     chartOverlay.sitEmb = null;
     chartOverlay.sitPag = null;
+    margemFilialDrillSigla = null;
     gradePage = 1;
     refreshDonutDrillChip();
     scheduleReload();
@@ -188,6 +188,7 @@ function wireFilterDropdowns() {
     if (key) updateFilterSummary(key);
     chartOverlay.sitEmb = null;
     chartOverlay.sitPag = null;
+    margemFilialDrillSigla = null;
     gradePage = 1;
     refreshDonutDrillChip();
     scheduleReload();
@@ -330,8 +331,13 @@ async function init() {
     wireModalViagemLinhas();
     wireGradeSortHeaders();
     wireDestinoFilialSort();
+    wireDesviosSort();
+    wireEmbarqueSort();
+    wirePagamentoSort();
+    wireFiliaisSort();
     updateGradeSortHeaders();
     FILTER_KEYS.forEach(updateFilterSummary);
+    wireMargemFilialChartDblClick();
     await loadAll();
     document.getElementById('loading').classList.add('hidden');
     refreshDonutDrillChip();
@@ -371,7 +377,7 @@ function populateFilters(data) {
   optionsBox('contrato').innerHTML = data.contratos.map(i => filterCheckboxRow(String(i), String(i))).join('');
   optionsBox('tipoCte').innerHTML = data.tiposCte.map(i => filterCheckboxRow(String(i), String(i))).join('');
   optionsBox('cliente').innerHTML = data.clientes.map(c =>
-    filterCheckboxRow(String(c.key), c.nome)
+    filterCheckboxRow(String(c.nome), c.nome)
   ).join('');
 }
 
@@ -414,6 +420,7 @@ function wireGradeSortHeaders() {
       gradeSort.dir = 'asc';
     }
     gradePage = 1;
+    updateGradeSortHeaders();
     loadGrade();
   });
 }
@@ -534,6 +541,352 @@ function wireDestinoFilialSort() {
   });
 }
 
+function updateSimpleSortHeaders(theadId, sortState) {
+  document.querySelectorAll(`#${theadId} th[data-sort]`).forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    if (sortState.key === th.dataset.sort) {
+      th.classList.add(sortState.dir === 'desc' ? 'sorted-desc' : 'sorted-asc');
+    }
+  });
+}
+
+function wireGenericTableSort(theadId, sortState, onReRender) {
+  document.getElementById(theadId)?.addEventListener('click', e => {
+    const th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    e.preventDefault();
+    const key = th.dataset.sort;
+    if (!key) return;
+    if (sortState.key === key) {
+      sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortState.key = key;
+      const ascKeys = new Set(['cliente', 'filial', 'nome', 'destino', 'contrato', 'situacao', 'sigla']);
+      sortState.dir = ascKeys.has(key) ? 'asc' : 'desc';
+    }
+    updateSimpleSortHeaders(theadId, sortState);
+    onReRender();
+  });
+}
+
+function desvioCampoOrdenacao(r, key) {
+  switch (key) {
+    case 'bipe':
+      return Number(r.bipe) || 0;
+    case 'filial':
+      return String(r.filial || '').toLowerCase();
+    case 'cliente':
+      return String(r.cliente || '').toLowerCase();
+    case 'contrato':
+      return String(r.contrato || '');
+    case 'destino':
+      return String(r.destino || '').toLowerCase();
+    case 'freteAntt':
+      return Number(r.freteAntt) || 0;
+    case 'valorComparado':
+      return Number(r.valorComparado) || 0;
+    case 'diferenca': {
+      const d = Number(r.diferenca) || 0;
+      return Math.abs(d);
+    }
+    case 'situacao':
+      return r.situacao === 'abaixo' ? 0 : 1;
+    default:
+      return 0;
+  }
+}
+
+function ordenarDesvios(rows, sortState) {
+  const { key, dir } = sortState;
+  const mul = dir === 'desc' ? -1 : 1;
+  const copia = [...rows];
+  copia.sort((a, b) => {
+    if (key === 'diferenca') {
+      const aa = Math.abs(Number(a.diferenca) || 0);
+      const ab = Math.abs(Number(b.diferenca) || 0);
+      if (aa !== ab) return (aa - ab) * mul;
+      return (Number(a.diferenca) - Number(b.diferenca)) * mul;
+    }
+    const va = desvioCampoOrdenacao(a, key);
+    const vb = desvioCampoOrdenacao(b, key);
+    const inv = x => x === null || x === undefined || (typeof x === 'number' && Number.isNaN(x));
+    if (inv(va) && inv(vb)) return String(a.bipe).localeCompare(String(b.bipe), 'pt-BR');
+    if (inv(va)) return 1;
+    if (inv(vb)) return -1;
+    let cmp = 0;
+    if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+    else cmp = String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' });
+    if (cmp !== 0) return cmp * mul;
+    return String(a.bipe).localeCompare(String(b.bipe), 'pt-BR');
+  });
+  return copia;
+}
+
+function viagemClienteCampo(r, key) {
+  switch (key) {
+    case 'cliente':
+      return String(r.cliente || '').toLowerCase();
+    case 'cnpj':
+      return String(r.cnpjTruncado || '').toLowerCase();
+    case 'qtd':
+      return Number(r.qtd) || 0;
+    case 'abaixo':
+      return Number(r.abaixo) || 0;
+    case 'dentro':
+      return Number(r.dentro) || 0;
+    case 'percAbaixo':
+      return Number(String(r.percAbaixo).replace(',', '.')) || 0;
+    case 'percDentro':
+      return Number(String(r.percDentro).replace(',', '.')) || 0;
+    default:
+      return 0;
+  }
+}
+
+function ordenarViagensCliente(rows, sortState) {
+  const { key, dir } = sortState;
+  const mul = dir === 'desc' ? -1 : 1;
+  const copia = [...rows];
+  copia.sort((a, b) => {
+    const va = viagemClienteCampo(a, key);
+    const vb = viagemClienteCampo(b, key);
+    let cmp = 0;
+    if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+    else cmp = String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' });
+    if (cmp !== 0) return cmp * mul;
+    return String(a.cliente).localeCompare(String(b.cliente), 'pt-BR');
+  });
+  return copia;
+}
+
+function filialCampoOrdenacao(r, key) {
+  switch (key) {
+    case 'sigla':
+      return String(r.sigla || '').toLowerCase();
+    case 'nome':
+      return String(r.nome || '').toLowerCase();
+    case 'qtd':
+      return Number(r.qtd) || 0;
+    case 'abaixo':
+      return Number(r.abaixo) || 0;
+    case 'dentro':
+      return Number(r.dentro) || 0;
+    case 'percAbaixo':
+      return Number(String(r.percAbaixo).replace(',', '.')) || 0;
+    case 'percDentro':
+      return Number(String(r.percDentro).replace(',', '.')) || 0;
+    default:
+      return 0;
+  }
+}
+
+function ordenarFiliaisLocal(rows, sortState) {
+  const { key, dir } = sortState;
+  const mul = dir === 'desc' ? -1 : 1;
+  const copia = [...rows];
+  copia.sort((a, b) => {
+    const va = filialCampoOrdenacao(a, key);
+    const vb = filialCampoOrdenacao(b, key);
+    let cmp = 0;
+    if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+    else cmp = String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' });
+    if (cmp !== 0) return cmp * mul;
+    return String(a.sigla).localeCompare(String(b.sigla), 'pt-BR');
+  });
+  return copia;
+}
+
+function wireDesviosSort() {
+  wireGenericTableSort('thead-desvios', desviosSort, renderDesviosTable);
+}
+
+function wireEmbarqueSort() {
+  wireGenericTableSort('thead-embarcador', embarcadorSort, renderEmbarqueTable);
+}
+
+function wirePagamentoSort() {
+  wireGenericTableSort('thead-pagamento', pagamentoSort, renderPagamentoTable);
+}
+
+function wireFiliaisSort() {
+  wireGenericTableSort('thead-filiais', filiaisSort, renderFiliaisTable);
+}
+
+function releaseMargemFilialChartDrillFilters() {
+  margemFilialDrillSigla = null;
+  setFilterValues('filial', []);
+  setFilterValues('contrato', []);
+  chartOverlay.sitPag = null;
+  chartOverlay.sitEmb = null;
+  refreshDonutDrillChip();
+  gradePage = 1;
+}
+
+function afterMargemFilialChartFilterMutation() {
+  const onPlanilha = document.querySelector('.tab-btn[data-tab="planilha"]')?.classList.contains('active');
+  if (onPlanilha) loadGrade();
+  else scheduleReload();
+}
+
+function wireMargemFilialChartDblClick() {
+  document.getElementById('chart-margem-filial-wrap')?.addEventListener('dblclick', e => {
+    e.preventDefault();
+    if (!margemFilialDrillSigla) return;
+    releaseMargemFilialChartDrillFilters();
+    afterMargemFilialChartFilterMutation();
+  });
+}
+
+function renderMargemFilialRsTable(rows) {
+  const tbody = document.getElementById('tbody-margem-filial-rs');
+  if (!tbody) return;
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Sem dados no filtro atual.</p></div></td></tr>';
+    return;
+  }
+  let sumN = 0;
+  let sumDif = 0;
+  const body = rows.map(r => {
+    sumN += r.n;
+    sumDif += r.diferencaRsTotal;
+    return `<tr>
+      <td><span class="tag tag-blue mono">${escHtml(r.sigla)}</span> <span style="color:var(--text-muted);font-size:11px;font-weight:600">${escHtml(r.nome)}</span></td>
+      <td class="mono num">${fmt.num(r.n)}</td>
+      <td class="mono num">${fmt.currency(r.diferencaRsTotal)}</td>
+      <td class="mono num">${fmt.currency(r.diferencaRsMedia)}</td>
+      <td class="mono num">${fmt.pct(r.mediaMargemPaga)}</td>
+      <td class="mono num">${fmt.pct(r.mediaMargemMinPiso)}</td>
+    </tr>`;
+  }).join('');
+  const foot = `<tr style="font-weight:700;background:rgba(15,23,42,0.04)">
+    <td>Consolidado</td>
+    <td class="mono num">${fmt.num(sumN)}</td>
+    <td class="mono num">${fmt.currency(sumDif)}</td>
+    <td class="mono num">${sumN ? fmt.currency(Math.round((sumDif / sumN) * 100) / 100) : '—'}</td>
+    <td colspan="2" style="color:var(--text-muted);font-size:11px;font-weight:600">Σ (piso ANTT − BIPE) nesta base</td>
+  </tr>`;
+  tbody.innerHTML = body + foot;
+}
+
+function renderMargemFilialChart(rows) {
+  const ctx = document.getElementById('chart-margem-filial')?.getContext('2d');
+  const sub = document.getElementById('grade-margem-subtitle');
+  renderMargemFilialRsTable(rows && rows.length ? rows : []);
+  if (!ctx) return;
+  if (charts.margemFilial) {
+    charts.margemFilial.destroy();
+    charts.margemFilial = null;
+  }
+  if (rows == null) {
+    if (sub) sub.textContent = '';
+    return;
+  }
+  if (!rows.length) {
+    if (sub) {
+      sub.textContent = 'Nenhuma viagem Agregado/Terceiro abaixo do piso (BIPE) nos filtros — não há margem a comparar por filial.';
+    }
+    return;
+  }
+  const totalN = rows.reduce((a, d) => a + d.n, 0);
+  if (sub) {
+    sub.textContent = `Apenas viagens com farol BIPE abaixo: ${fmt.num(totalN)} CT-e · BIPE ÷ frete peso (margem paga) vs piso ANTT ÷ frete peso (mínimo para 100% dentro). Clique numa barra (vermelha ou verde): abre a planilha com viagens da filial (Agregado + Terceiro + abaixo BIPE). Clique de novo na mesma filial ou dê duplo clique na área do gráfico para limpar.`;
+  }
+  charts.margemFilial = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(d => `${d.sigla} — ${d.nome}`),
+      datasets: [
+        {
+          label: 'Margem paga (média %)',
+          data: rows.map(d => d.mediaMargemPaga),
+          backgroundColor: 'rgba(220,38,38,0.82)',
+          borderRadius: 4
+        },
+        {
+          label: '% mínimo piso/frete peso (dentro ANTT)',
+          data: rows.map(d => d.mediaMargemMinPiso),
+          backgroundColor: 'rgba(45,106,79,0.82)',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: CHART_AXIS, font: { size: 11, weight: '600' }, boxWidth: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.x;
+              const d = rows[ctx.dataIndex];
+              const extra = d ? ` · ${fmt.num(d.n)} viagens` : '';
+              return ` ${ctx.dataset.label}: ${Number(v).toFixed(1)}%${extra}`;
+            }
+          }
+        },
+        datalabels: {
+          color: CHART_AXIS,
+          font: { size: 9, weight: '700' },
+          clip: false,
+          formatter: (v, ctx) => {
+            const n = Number(v);
+            return Number.isFinite(n) && n >= 8 ? `${n.toFixed(1)}%` : '';
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: CHART_GRID },
+          ticks: {
+            color: CHART_AXIS,
+            font: { weight: '600' },
+            callback: v => `${Number(v)}%`
+          },
+          title: {
+            display: true,
+            text: '% sobre frete peso documentado',
+            color: CHART_AXIS_SOFT,
+            font: { size: 10, weight: '600' }
+          }
+        },
+        y: {
+          stacked: false,
+          grid: { color: CHART_GRID },
+          ticks: { color: CHART_AXIS, font: { size: 10, weight: '600' }, autoSkip: false }
+        }
+      },
+      onClick(ev, elems) {
+        if (!elems.length) return;
+        const idx = elems[0].index;
+        const row = rows[idx];
+        if (!row) return;
+        if (margemFilialDrillSigla === row.sigla) {
+          releaseMargemFilialChartDrillFilters();
+          afterMargemFilialChartFilterMutation();
+          return;
+        }
+        margemFilialDrillSigla = row.sigla;
+        setFilterValues('filial', [row.sigla]);
+        setFilterValues('contrato', ['Agregado', 'Terceiro']);
+        chartOverlay.sitPag = 'abaixo';
+        chartOverlay.sitEmb = null;
+        refreshDonutDrillChip();
+        gradePage = 1;
+        const tabBtn = document.querySelector('.tab-btn[data-tab="planilha"]');
+        if (tabBtn && !tabBtn.classList.contains('active')) {
+          tabBtn.click();
+        } else {
+          loadGrade();
+        }
+      }
+    }
+  });
+}
+
 async function loadGrade(pageOverride) {
   if (pageOverride != null) gradePage = pageOverride;
   const extra = { page: gradePage, limit: GRADE_LIMIT };
@@ -542,12 +895,19 @@ async function loadGrade(pageOverride) {
     extra.sortDir = gradeSort.dir;
   }
   const q = buildQuery(extra);
+  const qSemPag = buildQuery();
   const tbody = document.getElementById('tbody-grade');
   const meta = document.getElementById('grade-meta');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="16"><div class="empty-state"><p>Carregando…</p></div></td></tr>';
+  const subEl = document.getElementById('grade-margem-subtitle');
+  if (subEl) subEl.textContent = 'Carregando margem por filial…';
   try {
-    const resp = await fetchJSON(`${API}/frete/grade${q}`);
+    const [resp, margemFilial] = await Promise.all([
+      fetchJSON(`${API}/frete/grade${q}`),
+      fetchJSON(`${API}/frete/margem-por-filial${qSemPag}`)
+    ]);
+    renderMargemFilialChart(margemFilial);
     gradePage = resp.page;
     updateGradeSortHeaders();
     const from = resp.total === 0 ? 0 : (resp.page - 1) * resp.limit + 1;
@@ -584,6 +944,13 @@ async function loadGrade(pageOverride) {
   } catch (e) {
     console.error(e);
     tbody.innerHTML = `<tr><td colspan="16"><div class="empty-state"><p>${escHtml(String(e.message))}</p></div></td></tr>`;
+    if (charts.margemFilial) {
+      charts.margemFilial.destroy();
+      charts.margemFilial = null;
+    }
+    const errSub = document.getElementById('grade-margem-subtitle');
+    if (errSub) errSub.textContent = 'Não foi possível carregar o gráfico de margem por filial.';
+    renderMargemFilialRsTable([]);
   }
 }
 
@@ -724,8 +1091,17 @@ function renderTendenciaLinha(canvasId, series, keys, labels, colors, chartKey) 
         const i = elems[0].index;
         const row = series[i];
         if (!row || row.ano == null || row.mes == null) return;
-        setFilterValues('ano', [String(row.ano)]);
-        setFilterValues('mes', [row.mes]);
+        const curAno = getSelectedFilterValues('ano');
+        const curMes = getSelectedFilterValues('mes');
+        const same = curAno.length === 1 && curMes.length === 1 &&
+          curAno[0] === String(row.ano) && curMes[0] === row.mes;
+        if (same) {
+          setFilterValues('ano', []);
+          setFilterValues('mes', []);
+        } else {
+          setFilterValues('ano', [String(row.ano)]);
+          setFilterValues('mes', [row.mes]);
+        }
         chartOverlay.sitEmb = null;
         chartOverlay.sitPag = null;
         refreshDonutDrillChip();
@@ -765,8 +1141,8 @@ function renderTripDonut(canvasId, abaixo, dentro, chartKey, overlayKey) {
         subtitle: {
           display: true,
           text: overlayKey === 'sitEmb'
-            ? 'Clique para filtrar faixa vs frete peso'
-            : 'Clique para filtrar faixa BIPE × piso (só contratos Agregado/Terceiro)',
+            ? 'Frete peso × piso · clique no mesmo pedaço de novo para limpar o filtro'
+            : 'BIPE × piso (Ag/Ter) · clique no mesmo pedaço de novo para limpar o filtro',
           color: CHART_AXIS_SOFT,
           font: { size: 9, weight: '600' }
         },
@@ -792,8 +1168,11 @@ function renderTripDonut(canvasId, abaixo, dentro, chartKey, overlayKey) {
         const ix = elems[0].index;
         const map = ['abaixo', 'dentro'];
         const val = map[ix];
-        chartOverlay.sitEmb = overlayKey === 'sitEmb' ? val : chartOverlay.sitEmb;
-        chartOverlay.sitPag = overlayKey === 'sitPag' ? val : chartOverlay.sitPag;
+        if (overlayKey === 'sitEmb') {
+          chartOverlay.sitEmb = chartOverlay.sitEmb === val ? null : val;
+        } else {
+          chartOverlay.sitPag = chartOverlay.sitPag === val ? null : val;
+        }
         drillAfterChange();
       }
     }
@@ -833,7 +1212,7 @@ function renderFarolMixChart(farolData) {
         },
         subtitle: {
           display: true,
-          text: 'Clique na barra (contrato) para filtrar',
+          text: 'Clique na barra (contrato) para filtrar · clique de novo no mesmo contrato para limpar',
           color: CHART_AXIS_SOFT,
           font: { size: 10, weight: '600' },
           padding: { bottom: 4 }
@@ -858,7 +1237,12 @@ function renderFarolMixChart(farolData) {
         const di = elems[0].index;
         const contrato = labels[di];
         if (!contrato) return;
-        setFilterValues('contrato', [contrato]);
+        const cur = getSelectedFilterValues('contrato');
+        if (cur.length === 1 && cur[0] === contrato) {
+          setFilterValues('contrato', []);
+        } else {
+          setFilterValues('contrato', [contrato]);
+        }
         chartOverlay.sitEmb = null;
         chartOverlay.sitPag = null;
         refreshDonutDrillChip();
@@ -869,10 +1253,16 @@ function renderFarolMixChart(farolData) {
 }
 
 function renderDesvios(data) {
+  desviosRows = Array.isArray(data) ? data : [];
+  renderDesviosTable();
+}
+
+function renderDesviosTable() {
   const tbody = document.getElementById('tbody-desvios');
   if (!tbody) return;
-
-  tbody.innerHTML = data.map(r => `
+  updateSimpleSortHeaders('thead-desvios', desviosSort);
+  const sorted = ordenarDesvios(desviosRows, desviosSort);
+  tbody.innerHTML = sorted.map(r => `
     <tr data-bipe="${escAttr(String(r.bipe))}">
       <td class="mono" style="color:var(--text-secondary);font-weight:600">${escHtml(r.bipe)}</td>
       <td><strong>${escHtml(r.filial)}</strong></td>
@@ -890,19 +1280,40 @@ function renderDesvios(data) {
 // ── EMBARCADOR / PAGAMENTO — tabelas e barras ─────────────────────────────────
 async function loadEmbarque(q) {
   const data = await fetchJSON(`${API}/frete/viagens-embarcador${q}`);
-  renderViagensTable(document.getElementById('tbody-viagens-embarcador'), data);
+  embarcadorRows = data;
   document.getElementById('count-embarcador').textContent = `${data.length} embarcadores`;
+  renderEmbarqueTable();
 }
 
 async function loadPagamento(q) {
   const data = await fetchJSON(`${API}/frete/viagens-pagamento-ag-ter${q}`);
-  renderViagensTable(document.getElementById('tbody-viagens-pagamento'), data);
+  pagamentoRows = data;
   document.getElementById('count-pagamento').textContent = `${data.length} clientes com Ag/Ter`;
+  renderPagamentoTable();
 }
 
-function renderViagensTable(tbody, rows) {
+function renderEmbarqueTable() {
+  const tbody = document.getElementById('tbody-viagens-embarcador');
   if (!tbody) return;
+  updateSimpleSortHeaders('thead-embarcador', embarcadorSort);
+  const rows = ordenarViagensCliente(embarcadorRows, embarcadorSort);
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${escHtml(r.cliente)}</strong><br><span class="mono" style="font-size:10px;color:var(--text-secondary);font-weight:600">${escHtml(r.cnpjTruncado)}</span></td>
+      <td class="mono">${fmt.num(r.qtd)}</td>
+      <td class="mono" style="color:var(--red)">${fmt.num(r.abaixo)}</td>
+      <td class="mono" style="color:var(--green)">${fmt.num(r.dentro)}</td>
+      <td class="mono">${fmt.pct(r.percAbaixo)}</td>
+      <td class="mono">${fmt.pct(r.percDentro)}</td>
+    </tr>
+  `).join('');
+}
 
+function renderPagamentoTable() {
+  const tbody = document.getElementById('tbody-viagens-pagamento');
+  if (!tbody) return;
+  updateSimpleSortHeaders('thead-pagamento', pagamentoSort);
+  const rows = ordenarViagensCliente(pagamentoRows, pagamentoSort);
   tbody.innerHTML = rows.map(r => `
     <tr>
       <td><strong>${escHtml(r.cliente)}</strong><br><span class="mono" style="font-size:10px;color:var(--text-secondary);font-weight:600">${escHtml(r.cnpjTruncado)}</span></td>
@@ -954,7 +1365,9 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
         },
         subtitle: {
           display: true,
-          text: 'Clique numa faixa/barra horizontal para filtrar cliente',
+          text: chartKey === 'stackEmb'
+            ? 'Clique na faixa vermelha ou verde: filtra cliente (trunco) + embarcador abaixo/dentro · clique de novo para limpar'
+            : 'Clique na faixa: cliente (trunco) + BIPE abaixo/dentro · clique de novo para limpar',
           color: CHART_AXIS_SOFT,
           font: { size: 10, weight: '600' }
         },
@@ -984,12 +1397,30 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
       },
       onClick(ev, elems) {
         if (!elems.length) return;
-        const clienteNome = sliceData[elems[0].index]?.cliente;
+        const elem = elems[0];
+        const clienteNome = sliceData[elem.index]?.cliente;
         if (!clienteNome) return;
-        const key = findClienteKeyByNome(clienteNome);
-        if (key) setFilterValues('cliente', [key]);
-        chartOverlay.sitEmb = null;
-        chartOverlay.sitPag = null;
+        const isAbaixoSeg = elem.datasetIndex === 0;
+        const sitVal = isAbaixoSeg ? 'abaixo' : 'dentro';
+        const overlaySitKey = chartKey === 'stackEmb' ? 'sitEmb' : 'sitPag';
+        const curCli = getSelectedFilterValues('cliente');
+        const curSit = overlaySitKey === 'sitEmb' ? chartOverlay.sitEmb : chartOverlay.sitPag;
+        const sameCli = curCli.length === 1 && curCli[0] === clienteNome;
+        const sameBlock = sameCli && curSit === sitVal;
+        if (sameBlock) {
+          setFilterValues('cliente', []);
+          if (overlaySitKey === 'sitEmb') chartOverlay.sitEmb = null;
+          else chartOverlay.sitPag = null;
+        } else {
+          setFilterValues('cliente', [clienteNome]);
+          if (overlaySitKey === 'sitEmb') {
+            chartOverlay.sitEmb = sitVal;
+            chartOverlay.sitPag = null;
+          } else {
+            chartOverlay.sitPag = sitVal;
+            chartOverlay.sitEmb = null;
+          }
+        }
         refreshDonutDrillChip();
         scheduleReload();
       }
@@ -1000,20 +1431,26 @@ function renderStackedPctChart(canvasId, sliceData, chartKey) {
 // ── FILIAIS ────────────────────────────────────────────────────────────────────
 async function loadFiliais(q) {
   const data = await fetchJSON(`${API}/frete/por-filial${q}`);
+  filiaisRows = data;
+  renderFiliaisTable();
+}
+
+function renderFiliaisTable() {
   const tbody = document.getElementById('tbody-filiais');
-  if (tbody) {
-    tbody.innerHTML = data.map(r => `
-      <tr>
-        <td><span class="tag tag-blue mono">${escHtml(r.sigla)}</span></td>
-        <td><strong>${escHtml(r.nome)}</strong></td>
-        <td class="mono">${fmt.num(r.qtd)}</td>
-        <td class="mono" style="color:var(--red)">${fmt.num(r.abaixo)}</td>
-        <td class="mono" style="color:var(--green)">${fmt.num(r.dentro)}</td>
-        <td class="mono">${fmt.pct(r.percAbaixo)}</td>
-        <td class="mono">${fmt.pct(r.percDentro)}</td>
-      </tr>
-    `).join('');
-  }
+  if (!tbody) return;
+  updateSimpleSortHeaders('thead-filiais', filiaisSort);
+  const rows = ordenarFiliaisLocal(filiaisRows, filiaisSort);
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><span class="tag tag-blue mono">${escHtml(r.sigla)}</span></td>
+      <td><strong>${escHtml(r.nome)}</strong></td>
+      <td class="mono">${fmt.num(r.qtd)}</td>
+      <td class="mono" style="color:var(--red)">${fmt.num(r.abaixo)}</td>
+      <td class="mono" style="color:var(--green)">${fmt.num(r.dentro)}</td>
+      <td class="mono">${fmt.pct(r.percAbaixo)}</td>
+      <td class="mono">${fmt.pct(r.percDentro)}</td>
+    </tr>
+  `).join('');
 }
 
 function renderFiliaisChart(data) {
@@ -1050,7 +1487,7 @@ function renderFiliaisChart(data) {
         },
         subtitle: {
           display: true,
-          text: 'Clique para filtrar filial',
+          text: 'Clique para filtrar filial · clique de novo na mesma barra para limpar',
           color: CHART_AXIS_SOFT,
           font: { size: 10, weight: '600' }
         },
@@ -1081,7 +1518,12 @@ function renderFiliaisChart(data) {
         if (!elems.length) return;
         const lab = sorted[elems[0].index];
         if (!lab) return;
-        setFilterValues('filial', [lab.sigla]);
+        const cur = getSelectedFilterValues('filial');
+        if (cur.length === 1 && cur[0] === lab.sigla) {
+          setFilterValues('filial', []);
+        } else {
+          setFilterValues('filial', [lab.sigla]);
+        }
         chartOverlay.sitEmb = null;
         chartOverlay.sitPag = null;
         refreshDonutDrillChip();
@@ -1118,6 +1560,7 @@ document.getElementById('btn-reset')?.addEventListener('click', async () => {
   clearAllFilterChecks();
   chartOverlay.sitEmb = null;
   chartOverlay.sitPag = null;
+  margemFilialDrillSigla = null;
   gradePage = 1;
   refreshDonutDrillChip();
   await loadAll();

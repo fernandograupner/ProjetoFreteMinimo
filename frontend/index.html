@@ -345,18 +345,18 @@
         <div class="table-count">top 20</div>
       </div>
       <div class="table-wrap">
-        <table>
-          <thead>
+        <table class="table-sortable">
+          <thead id="thead-desvios">
             <tr>
-              <th>BIPE</th>
-              <th>Filial</th>
-              <th>Cliente</th>
-              <th>Contrato</th>
-              <th>Destino</th>
-              <th>Piso ANTT</th>
-              <th>Valor analisado</th>
-              <th>Diferença</th>
-              <th>Faixa</th>
+              <th data-sort="bipe" scope="col"><span class="th-sort-inner">BIPE</span></th>
+              <th data-sort="filial" scope="col"><span class="th-sort-inner">Filial</span></th>
+              <th data-sort="cliente" scope="col"><span class="th-sort-inner">Cliente</span></th>
+              <th data-sort="contrato" scope="col"><span class="th-sort-inner">Contrato</span></th>
+              <th data-sort="destino" scope="col"><span class="th-sort-inner">Destino</span></th>
+              <th data-sort="freteAntt" class="th-num" scope="col"><span class="th-sort-inner">Piso ANTT</span></th>
+              <th data-sort="valorComparado" class="th-num" scope="col"><span class="th-sort-inner">Valor analisado</span></th>
+              <th data-sort="diferenca" class="th-num" scope="col"><span class="th-sort-inner" title="Ordena por maior impacto (|diferença|)">Diferença</span></th>
+              <th data-sort="situacao" scope="col"><span class="th-sort-inner">Faixa</span></th>
             </tr>
           </thead>
           <tbody id="tbody-desvios" class="tbody-click-bipe">
@@ -377,15 +377,15 @@
         <div class="table-count" id="count-embarcador">—</div>
       </div>
       <div class="table-wrap">
-        <table>
-          <thead>
+        <table class="table-sortable">
+          <thead id="thead-embarcador">
             <tr>
-              <th>Cliente</th>
-              <th>Viagens</th>
-              <th>Abaixo piso</th>
-              <th>Dentro do piso</th>
-              <th>% Abaixo</th>
-              <th>% Dentro</th>
+              <th data-sort="cliente" scope="col"><span class="th-sort-inner">Cliente</span></th>
+              <th data-sort="qtd" class="th-num" scope="col"><span class="th-sort-inner">Viagens</span></th>
+              <th data-sort="abaixo" class="th-num" scope="col"><span class="th-sort-inner">Abaixo piso</span></th>
+              <th data-sort="dentro" class="th-num" scope="col"><span class="th-sort-inner">Dentro do piso</span></th>
+              <th data-sort="percAbaixo" class="th-num" scope="col"><span class="th-sort-inner">% Abaixo</span></th>
+              <th data-sort="percDentro" class="th-num" scope="col"><span class="th-sort-inner">% Dentro</span></th>
             </tr>
           </thead>
           <tbody id="tbody-viagens-embarcador">
@@ -404,15 +404,15 @@
         <div class="table-count" id="count-pagamento">—</div>
       </div>
       <div class="table-wrap">
-        <table>
-          <thead>
+        <table class="table-sortable">
+          <thead id="thead-pagamento">
             <tr>
-              <th>Cliente</th>
-              <th>Viagens Ag/Ter</th>
-              <th>Abaixo piso</th>
-              <th>Dentro do piso</th>
-              <th>% Abaixo</th>
-              <th>% Dentro</th>
+              <th data-sort="cliente" scope="col"><span class="th-sort-inner">Cliente</span></th>
+              <th data-sort="qtd" class="th-num" scope="col"><span class="th-sort-inner">Viagens Ag/Ter</span></th>
+              <th data-sort="abaixo" class="th-num" scope="col"><span class="th-sort-inner">Abaixo piso</span></th>
+              <th data-sort="dentro" class="th-num" scope="col"><span class="th-sort-inner">Dentro do piso</span></th>
+              <th data-sort="percAbaixo" class="th-num" scope="col"><span class="th-sort-inner">% Abaixo</span></th>
+              <th data-sort="percDentro" class="th-num" scope="col"><span class="th-sort-inner">% Dentro</span></th>
             </tr>
           </thead>
           <tbody id="tbody-viagens-pagamento">
@@ -432,16 +432,16 @@
         <div class="table-count">todas</div>
       </div>
       <div class="table-wrap">
-        <table>
-          <thead>
+        <table class="table-sortable">
+          <thead id="thead-filiais">
             <tr>
-              <th>Sigla</th>
-              <th>Filial</th>
-              <th>Viagens</th>
-              <th>Abaixo</th>
-              <th>Dentro piso</th>
-              <th>% Abaixo</th>
-              <th>% Dentro</th>
+              <th data-sort="sigla" scope="col"><span class="th-sort-inner">Sigla</span></th>
+              <th data-sort="nome" scope="col"><span class="th-sort-inner">Filial</span></th>
+              <th data-sort="qtd" class="th-num" scope="col"><span class="th-sort-inner">Viagens</span></th>
+              <th data-sort="abaixo" class="th-num" scope="col"><span class="th-sort-inner">Abaixo</span></th>
+              <th data-sort="dentro" class="th-num" scope="col"><span class="th-sort-inner">Dentro piso</span></th>
+              <th data-sort="percAbaixo" class="th-num" scope="col"><span class="th-sort-inner">% Abaixo</span></th>
+              <th data-sort="percDentro" class="th-num" scope="col"><span class="th-sort-inner">% Dentro</span></th>
             </tr>
           </thead>
           <tbody id="tbody-filiais">
@@ -526,6 +526,37 @@
       <div class="grade-legend-sparse">
         <span class="leg-dot dot-red"></span> abaixo do piso
         <span class="leg-dot dot-green"></span> dentro do piso (≥ mín. ANTT)
+      </div>
+      <p class="section-title" style="margin-top:1.5rem">Margem por filial (só Ag/Ter abaixo do piso)</p>
+      <div class="chart-card full">
+        <div class="chart-title">Margem paga vs. margem mínima para ficar 100% dentro do ANTT</div>
+        <p class="chart-subtitle" id="grade-margem-subtitle">—</p>
+        <div id="chart-margem-filial-wrap" class="chart-margem-filial-wrap chart-container tall" title="Duplo clique limpa o filtro aplicado pelo gráfico">
+          <canvas id="chart-margem-filial"></canvas>
+        </div>
+      </div>
+      <div class="table-card" style="margin-top:1rem">
+        <div class="table-header">
+          <div class="table-title">Diferença em R$ vs. piso (piso ANTT − BIPE)</div>
+          <div class="table-count">mesma base do gráfico</div>
+        </div>
+        <div class="table-wrap">
+          <table class="table-grade" style="font-size:12px">
+            <thead>
+              <tr>
+                <th scope="col">Filial</th>
+                <th class="th-num" scope="col">Viagens</th>
+                <th class="th-num" scope="col">Σ dif. R$</th>
+                <th class="th-num" scope="col">Média R$/viagem</th>
+                <th class="th-num" scope="col">Margem paga %</th>
+                <th class="th-num" scope="col">Margem mín. %</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-margem-filial-rs">
+              <tr><td colspan="6"><div class="empty-state"><p>—</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

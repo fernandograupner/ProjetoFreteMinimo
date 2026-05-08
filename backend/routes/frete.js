@@ -258,7 +258,14 @@ router.get('/filters', (req, res) => {
   const filiais = filiaisRef.map(f => ({ sigla: f['Filial'], nome: f['Filial Ref'] }));
   const contratos = [...new Set(dados.map(r => r['Contrato']))].filter(Boolean);
   const tiposCte = [...new Set(dados.map(r => r['Tipo CTe']))].filter(Boolean);
-  const clientes = clientesRef.map(c => ({ key: c['Cliente'], nome: c['Nome Ref'] }));
+  const truncos = new Map();
+  clientesRef.forEach(c => {
+    const nome = c['Nome Ref'];
+    if (!truncos.has(nome)) truncos.set(nome, { key: nome, nome });
+  });
+  const clientes = [...truncos.values()].sort((a, b) =>
+    a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+  );
 
   res.json({ anos, meses, filiais, contratos, tiposCte, clientes });
 });
@@ -656,6 +663,45 @@ router.get('/grade', (req, res) => {
     paginasTotal,
     linhas
   });
+});
+
+// ─── GET /api/frete/margem-por-filial ─────────────────────────────────────────
+/** Média % margem paga (BIPE÷frete peso) vs média % mínima para atingir o piso (piso÷frete peso), só Ag/Ter com Farol BIPE abaixo, por filial. */
+router.get('/margem-por-filial', (req, res) => {
+  const data = applyFilters(dados, req.query);
+  const map = {};
+  data.forEach(r => {
+    const ct = r['Contrato'];
+    if (ct !== 'Agregado' && ct !== 'Terceiro') return;
+    const antt = Number(r['Frete ANTT Padrão']) || 0;
+    const peso = Number(r['Frete peso doctos.']) || 0;
+    if (peso <= EPS_PISO) return;
+    const valFarolPg = valorAnaliseContrato(r);
+    if (classificarVsPiso(valFarolPg, antt) !== 'abaixo') return;
+    const sigla = r['Filial'];
+    if (!map[sigla]) {
+      map[sigla] = { sigla, nome: getFilialNome(sigla), n: 0, sumMargemPago: 0, sumMargemMin: 0, sumDifRs: 0 };
+    }
+    const b = map[sigla];
+    const pago = Number(r['Frete pago BIPE']) || 0;
+    b.n++;
+    b.sumMargemPago += (pago / peso) * 100;
+    b.sumMargemMin += (antt / peso) * 100;
+    b.sumDifRs += antt - pago;
+  });
+  const out = Object.values(map)
+    .filter(x => x.n > 0)
+    .map(x => ({
+      sigla: x.sigla,
+      nome: x.nome,
+      n: x.n,
+      mediaMargemPaga: Math.round((x.sumMargemPago / x.n) * 10) / 10,
+      mediaMargemMinPiso: Math.round((x.sumMargemMin / x.n) * 10) / 10,
+      diferencaRsTotal: Math.round(x.sumDifRs * 100) / 100,
+      diferencaRsMedia: Math.round((x.sumDifRs / x.n) * 100) / 100
+    }))
+    .sort((a, b) => b.n - a.n);
+  res.json(out);
 });
 
 module.exports = router;
