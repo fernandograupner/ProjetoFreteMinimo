@@ -54,14 +54,43 @@ def resolver_excel(argumento: str | None) -> Path:
     sys.exit(1)
 
 
+def resolver_aba(xl: pd.ExcelFile, nome: str, alternativas: tuple[str, ...] = ()) -> str:
+    abas = xl.sheet_names
+    for candidato in (nome, *alternativas):
+        if candidato in abas:
+            return candidato
+    return abas[0]
+
+
+def carregar_aba_ou_json(
+    xl: pd.ExcelFile,
+    sheet: str,
+    json_path: Path,
+    alternativas: tuple[str, ...] = (),
+) -> pd.DataFrame:
+    if sheet in xl.sheet_names:
+        return pd.read_excel(xl, sheet_name=sheet)
+    if json_path.exists():
+        print(f'  · aba "{sheet}" ausente — reutilizando {json_path.name}')
+        return pd.DataFrame(json.loads(json_path.read_text(encoding='utf-8')))
+    print(f'Erro: falta a aba "{sheet}" no Excel e não há {json_path.name}.')
+    print(f'  Abas encontradas: {", ".join(xl.sheet_names)}')
+    print('  Use o modelo com abas Base, Clientes e Filiais, ou mantenha clientes.json/filiais.json.')
+    sys.exit(1)
+
+
 arquivo = resolver_excel(sys.argv[1] if len(sys.argv) > 1 else None)
 saida = ROOT / 'backend' / 'data'
 saida.mkdir(parents=True, exist_ok=True)
 
 print(f'Lendo {arquivo.name}...')
-base = pd.read_excel(arquivo, sheet_name='Base')
-clientes = pd.read_excel(arquivo, sheet_name='Clientes')
-filiais = pd.read_excel(arquivo, sheet_name='Filiais')
+xl = pd.ExcelFile(arquivo)
+aba_base = resolver_aba(xl, 'Base', ('Planilha1', 'Sheet1', 'Dados'))
+if aba_base != 'Base':
+    print(f'  · aba de dados: "{aba_base}" (esperado "Base")')
+base = pd.read_excel(xl, sheet_name=aba_base)
+clientes = carregar_aba_ou_json(xl, 'Clientes', saida / 'clientes.json')
+filiais = carregar_aba_ou_json(xl, 'Filiais', saida / 'filiais.json')
 
 cliente_map = dict(zip(clientes['Cliente'], clientes['Nome Ref']))
 filial_map = dict(zip(filiais['Filial'], filiais['Filial Ref']))
@@ -76,14 +105,14 @@ base = base.where(pd.notnull(base), None)
 records = base.to_dict(orient='records')
 with open(saida / 'data.json', 'w', encoding='utf-8') as f:
     json.dump(records, f, ensure_ascii=False, default=str)
-print(f'  ✓ data.json — {len(records)} registros')
+print(f'  OK data.json - {len(records)} registros')
 
 with open(saida / 'clientes.json', 'w', encoding='utf-8') as f:
     json.dump(clientes.to_dict(orient='records'), f, ensure_ascii=False)
-print(f'  ✓ clientes.json — {len(clientes)} registros')
+print(f'  OK clientes.json - {len(clientes)} registros')
 
 with open(saida / 'filiais.json', 'w', encoding='utf-8') as f:
     json.dump(filiais.to_dict(orient='records'), f, ensure_ascii=False)
-print(f'  ✓ filiais.json — {len(filiais)} registros')
+print(f'  OK filiais.json - {len(filiais)} registros')
 
 print('\nPronto! Reinicie o servidor (npm start).')
